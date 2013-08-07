@@ -2,16 +2,20 @@ package main
 
 import (
 	"bufio"
+  "flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
+  "strconv"
 	"strings"
 )
 
+var port = flag.Int("port", 4242, "port to listen on")
+
 func main() {
-	ln, err := net.Listen("tcp", ":4242")
+	ln, err := net.Listen("tcp", ":" + strconv.Itoa(*port))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -22,6 +26,8 @@ func main() {
 	rmchan := make(chan Client)
 
 	go handleMessages(msgchan, addchan, rmchan)
+
+  log.Printf("Listening on " + strconv.Itoa(*port))
 
 	for {
 		conn, err := ln.Accept()
@@ -89,7 +95,7 @@ func handleMessages(msgchan <-chan Message, addchan <-chan Client, rmchan <-chan
 }
 
 func promptNick(c net.Conn, bufc *bufio.Reader) string {
-	io.WriteString(c, addColor(colorBlack, colorRed, "Welcome... to the real world") + "\n")
+	io.WriteString(c, addColor(colorMagenta, colorBlack, "Welcome... to the real world") + "\n")
 	io.WriteString(c, "What is your nick? ")
 	nick, _, _ := bufc.ReadLine()
 	return string(nick)

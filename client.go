@@ -1,4 +1,4 @@
-package gomud
+package main
 
 import (
 	"bufio"
@@ -38,16 +38,31 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 		if err != nil {
 			break
 		}
-		if strings.HasPrefix(line, "/me ") {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		if line == "/quit" {
+			// QUIT
+			io.WriteString(c.conn, "Bye!\n")
+			c.conn.Close()
 			ch <- Message{
 				nickname:    c.nickname,
-				message:     line[4:-1],
+				message:     "",
+				messageType: messageTypeQuit,
+			}
+		} else if strings.HasPrefix(line, "/me ") {
+			// EMOTE
+			ch <- Message{
+				nickname:    c.nickname,
+				message:     line[4:],
 				messageType: messageTypeEmote,
 			}
 		} else {
+			// SAY
 			ch <- Message{
 				nickname:    c.nickname,
-				message:     line[:-1],
+				message:     line,
 				messageType: messageTypeSay,
 			}
 		}
@@ -59,18 +74,18 @@ func (c Client) WriteLinesFrom(ch <-chan Message) {
 		toPrint := ""
 		switch {
 		case msg.messageType == messageTypeSay:
-			toPrint = fmt.Sprintf("\033[1;33;40m%s says %s\033[m", msg.nickname, msg.message)
+			toPrint = addColor(colorYellow, colorBlack, fmt.Sprintf("%s says %s", msg.nickname, msg.message))
 		case msg.messageType == messageTypeEmote:
-			toPrint = fmt.Sprintf("\033[1;32;40m%s %s\033[m", msg.nickname, msg.message)
+			toPrint = addColor(colorGreen, colorBlack, fmt.Sprintf("%s %s", msg.nickname, msg.message))
 		case msg.messageType == messageTypeQuit:
-			toPrint = fmt.Sprintf("\033[1;31;40m%s has quit.\033[m", msg.nickname)
+			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has quit.", msg.nickname))
 		case msg.messageType == messageTypeJoin:
-			toPrint = fmt.Sprintf("\033[1;30;40m%s has joined.\033[m", msg.nickname)
+			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has joined.", msg.nickname))
 		default:
 			log.Printf("Unknown message type: %+v", msg)
 			return
 		}
-		_, err := io.WriteString(c.conn, toPrint)
+		_, err := io.WriteString(c.conn, toPrint+"\n")
 		if err != nil {
 			return
 		}

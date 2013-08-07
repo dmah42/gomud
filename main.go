@@ -1,4 +1,4 @@
-package gomud
+package main
 
 import (
 	"bufio"
@@ -89,7 +89,7 @@ func handleMessages(msgchan <-chan Message, addchan <-chan Client, rmchan <-chan
 }
 
 func promptNick(c net.Conn, bufc *bufio.Reader) string {
-	io.WriteString(c, "\033[1;30;41mWelcome... to the real world\033[0m\n")
+	io.WriteString(c, addColor(colorBlack, colorRed, "Welcome... to the real world") + "\n")
 	io.WriteString(c, "What is your nick? ")
 	nick, _, _ := bufc.ReadLine()
 	return string(nick)

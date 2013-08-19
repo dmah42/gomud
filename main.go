@@ -2,20 +2,20 @@ package main
 
 import (
 	"bufio"
-  "flag"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
-  "strconv"
+	"strconv"
 	"strings"
 )
 
 var port = flag.Int("port", 4242, "port to listen on")
 
 func main() {
-	ln, err := net.Listen("tcp", ":" + strconv.Itoa(*port))
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(*port))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -27,7 +27,7 @@ func main() {
 
 	go handleMessages(msgchan, addchan, rmchan)
 
-  log.Printf("Listening on " + strconv.Itoa(*port))
+	log.Printf("Listening on " + strconv.Itoa(*port))
 
 	for {
 		conn, err := ln.Accept()
@@ -44,11 +44,14 @@ func handleConnection(c net.Conn, msgchan chan<- Message, addchan chan<- Client,
 	defer c.Close()
 
 	client := Client{
-		conn:     c,
-		nickname: promptNick(c, bufc),
-		ch:       make(chan Message),
+		conn:   c,
+		player: promptNick(c, bufc),
+		ch:     make(chan Message),
 	}
-	if strings.TrimSpace(client.nickname) == "" {
+	if client.player == nil {
+		return
+	}
+	if strings.TrimSpace(client.player.nickname) == "" {
 		io.WriteString(c, "Invalid Username\n")
 		return
 	}
@@ -56,16 +59,16 @@ func handleConnection(c net.Conn, msgchan chan<- Message, addchan chan<- Client,
 	addchan <- client
 	defer func() {
 		msgchan <- Message{
-			nickname:    client.nickname,
+			nickname:    client.player.nickname,
 			message:     "",
 			messageType: messageTypeQuit,
 		}
 		log.Printf("Connection from %v closed.\n", c.RemoteAddr())
 		rmchan <- client
 	}()
-	io.WriteString(c, fmt.Sprintf("Welcome, %s!\n\n", client.nickname))
+	io.WriteString(c, fmt.Sprintf("Welcome, %s!\n\n", client.player.nickname))
 	msgchan <- Message{
-		nickname:    client.nickname,
+		nickname:    client.player.nickname,
 		message:     "",
 		messageType: messageTypeJoin,
 	}
@@ -94,9 +97,25 @@ func handleMessages(msgchan <-chan Message, addchan <-chan Client, rmchan <-chan
 	}
 }
 
-func promptNick(c net.Conn, bufc *bufio.Reader) string {
-	io.WriteString(c, addColor(colorMagenta, colorBlack, "Welcome... to the real world") + "\n")
-	io.WriteString(c, "What is your nick? ")
-	nick, _, _ := bufc.ReadLine()
-	return string(nick)
+func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
+	io.WriteString(c, addColor(colorMagenta, colorBlack, "Welcome... to the real world")+"\n")
+	errorCount := 0
+	var nick string
+	for errorCount < 3 {
+		io.WriteString(c, "What is your nick? ")
+		nickBytes, _, _ := bufc.ReadLine()
+		nick = string(nickBytes)
+		log.Printf("Creating new player: %s\n", nick)
+		// TODO: prompt for realname
+		if err := NewPlayer(nick, "realname"); err != nil {
+			// TODO: check password
+			log.Printf("Error creating new player %s: %+v\n", nick, err)
+			errorCount = errorCount + 1
+		} else {
+			// TODO: check error
+			player, _ := GetPlayer(nick)
+			return player
+		}
+	}
+	return nil
 }

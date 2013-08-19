@@ -17,6 +17,8 @@ const ( // message types
 	// TODO: merge join and quit?
 	messageTypeJoin
 	messageTypeQuit
+
+	messageTypeWho
 )
 
 type Message struct {
@@ -26,9 +28,9 @@ type Message struct {
 }
 
 type Client struct {
-	conn     net.Conn
-	nickname string
-	ch       chan Message
+	conn   net.Conn
+	player *Player
+	ch     chan Message
 }
 
 func (c Client) ReadLinesInto(ch chan<- Message) {
@@ -42,26 +44,35 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 		if len(line) == 0 {
 			continue
 		}
-		if line == "/quit" {
-			// QUIT
+		// TODO: register commands indexed by /<prefix> that create the message to send.
+		switch {
+		// QUIT
+		case line == "/quit":
 			io.WriteString(c.conn, "Bye!\n")
 			c.conn.Close()
 			ch <- Message{
-				nickname:    c.nickname,
+				nickname:    c.player.nickname,
 				message:     "",
 				messageType: messageTypeQuit,
 			}
-		} else if strings.HasPrefix(line, "/me ") {
-			// EMOTE
+		// EMOTE
+		case strings.HasPrefix(line, "/me "):
 			ch <- Message{
-				nickname:    c.nickname,
+				nickname:    c.player.nickname,
 				message:     line[4:],
 				messageType: messageTypeEmote,
 			}
-		} else {
+		// WHO
+		case strings.HasPrefix(line, "/who "):
+			ch <- Message{
+				nickname:    c.player.nickname,
+				message:     line[5:],
+				messageType: messageTypeWho,
+			}
+		default:
 			// SAY
 			ch <- Message{
-				nickname:    c.nickname,
+				nickname:    c.player.nickname,
 				message:     line,
 				messageType: messageTypeSay,
 			}
@@ -72,6 +83,7 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 func (c Client) WriteLinesFrom(ch <-chan Message) {
 	for msg := range ch {
 		toPrint := ""
+		// TODO: Register command per message type for colors/format string.
 		switch {
 		case msg.messageType == messageTypeSay:
 			toPrint = addColor(colorYellow, colorBlack, fmt.Sprintf("%s says %s", msg.nickname, msg.message))
@@ -81,6 +93,10 @@ func (c Client) WriteLinesFrom(ch <-chan Message) {
 			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has quit.", msg.nickname))
 		case msg.messageType == messageTypeJoin:
 			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has joined.", msg.nickname))
+		case msg.messageType == messageTypeWho:
+			// TODO: check error
+			player, _ := GetPlayer(msg.message)
+			toPrint = addColor(colorWhite, colorBlack, fmt.Sprintf("%v.", player))
 		default:
 			log.Printf("Unknown message type: %+v", msg)
 			return

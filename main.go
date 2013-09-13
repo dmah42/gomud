@@ -100,16 +100,19 @@ func handleMessages(msgchan <-chan Message, addchan <-chan Client, rmchan <-chan
 func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
 	io.WriteString(c, addColor(colorMagenta, colorBlack, "Welcome... to the real world")+"\n")
 	errorCount := 0
-	var nick string
+	var nick, realname string
 	for errorCount < 3 {
 		io.WriteString(c, "What is your nick? ")
 		nickBytes, _, _ := bufc.ReadLine()
 		nick = string(nickBytes)
 		log.Printf("Creating new player: %s\n", nick)
-		// TODO: prompt for realname
-		if err := NewPlayer(nick, "realname"); err != nil {
+		io.WriteString(c, "What is your real name? ")
+    realnameBytes, _, _ := bufc.ReadLine()
+    realname = string(realnameBytes)
+		log.Printf("Adding real name %s for %s\n", realname, nick)
+		if err := NewPlayer(nick, realname); err != nil {
 			// TODO: check password
-			log.Printf("Error creating new player %s: %+v\n", nick, err)
+			log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
 			errorCount = errorCount + 1
 		} else {
 			// TODO: check error

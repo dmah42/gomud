@@ -45,16 +45,17 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 			continue
 		}
 		// TODO: register commands indexed by /<prefix> that create the message to send.
+		log.Printf("%q gave command %q.\n", c.player.nickname, line)
 		switch {
 		// QUIT
 		case line == "/quit":
 			io.WriteString(c.conn, "Bye!\n")
 			c.conn.Close()
-			ch <- Message{
-				nickname:    c.player.nickname,
-				message:     "",
-				messageType: messageTypeQuit,
-			}
+      ch <- Message{
+        nickname:    c.player.nickname,
+        message:     "",
+        messageType: messageTypeQuit,
+      }
 		// EMOTE
 		case strings.HasPrefix(line, "/me "):
 			ch <- Message{
@@ -62,12 +63,16 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 				message:     line[4:],
 				messageType: messageTypeEmote,
 			}
-		// WHO
-		case strings.HasPrefix(line, "/who "):
-			ch <- Message{
-				nickname:    c.player.nickname,
-				message:     line[5:],
-				messageType: messageTypeWho,
+			// WHO
+		case line == "/who":
+			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", GetAllPlayers())))
+			// FINGER
+		case strings.HasPrefix(line, "/finger "):
+			player, err := GetPlayer(line[8:])
+			if err != nil {
+				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
+			} else {
+				io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v.\n", player)))
 			}
 		default:
 			// SAY
@@ -94,9 +99,6 @@ func (c Client) WriteLinesFrom(ch <-chan Message) {
 		case msg.messageType == messageTypeJoin:
 			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has joined.", msg.nickname))
 		case msg.messageType == messageTypeWho:
-			// TODO: check error
-			player, _ := GetPlayer(msg.message)
-			toPrint = addColor(colorWhite, colorBlack, fmt.Sprintf("%v.", player))
 		default:
 			log.Printf("Unknown message type: %+v", msg)
 			return

@@ -107,8 +107,8 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
 		nick = string(nickBytes)
 		log.Printf("Creating new player: %s\n", nick)
 		io.WriteString(c, "What is your real name? ")
-    realnameBytes, _, _ := bufc.ReadLine()
-    realname = string(realnameBytes)
+		realnameBytes, _, _ := bufc.ReadLine()
+		realname = string(realnameBytes)
 		log.Printf("Adding real name %s for %s\n", realname, nick)
 		if err := NewPlayer(nick, realname); err != nil {
 			// TODO: check password

@@ -33,3 +33,14 @@ func GetPlayer(nickname string) (*Player, error) {
 	}
 	return nil, fmt.Errorf("Player %q not found")
 }
+
+// TODO: Only return connected players.
+func GetAllPlayers() []string {
+  allPlayers := make([]string, len(players))
+  i := 0
+  for  _, p := range players {
+     allPlayers[i] = p.nickname
+     i++
+  }
+  return allPlayers
+}

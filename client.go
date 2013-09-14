@@ -65,14 +65,19 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 			}
 			// WHO
 		case line == "/who":
-			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", playerDb.GetAll())))
+			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", GetConnected())))
 			// FINGER
 		case strings.HasPrefix(line, "/finger "):
-			player, err := playerDb.Get(line[8:])
-			if err != nil {
-				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
+			if player, err := playerDb.Get(line[8:]); err == nil {
+        toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player))
+        if IsConnected(player.Nickname) {
+          toPrint += addColor(colorGreen, colorBlack, "[online]\n")
+        } else {
+          toPrint += addColor(colorRed, colorBlack, "[offline]\n")
+        }
+				io.WriteString(c.conn, toPrint)
 			} else {
-				io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v.\n", player)))
+				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
 			}
 		default:
 			// SAY

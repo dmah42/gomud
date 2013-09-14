@@ -57,20 +57,24 @@ func handleConnection(c net.Conn, msgchan chan<- Message, addchan chan<- Client,
 		return
 	}
 	addchan <- client
-	defer func() {
-		msgchan <- Message{
-			nickname:    client.player.Nickname,
-			message:     "",
-			messageType: messageTypeQuit,
-		}
-		log.Printf("Connection from %v closed.\n", c.RemoteAddr())
-		rmchan <- client
-	}()
 	msgchan <- Message{
 		nickname:    client.player.Nickname,
 		message:     "",
 		messageType: messageTypeJoin,
 	}
+
+  Connect(client.player.Nickname)
+
+	defer func() {
+		msgchan <- Message{
+		  nickname:    client.player.Nickname,
+		  message:     "",
+		  messageType: messageTypeQuit,
+		}
+    Disconnect(client.player.Nickname)
+		log.Printf("Connection from %v closed.\n", c.RemoteAddr())
+		rmchan <- client
+	}()
 
 	// TODO: read lines into parser and write response based on location.
 	go client.ReadLinesInto(msgchan)

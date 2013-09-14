@@ -9,12 +9,17 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"strings"
 )
 
 var port = flag.Int("port", 4242, "port to listen on")
 
 func main() {
+  err := LoadPlayerDb()
+  if err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+  }
+
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(*port))
 	if err != nil {
 		fmt.Println(err)
@@ -51,24 +56,18 @@ func handleConnection(c net.Conn, msgchan chan<- Message, addchan chan<- Client,
 	if client.player == nil {
 		return
 	}
-	if strings.TrimSpace(client.player.nickname) == "" {
-		io.WriteString(c, "Invalid Username\n")
-		return
-	}
-
 	addchan <- client
 	defer func() {
 		msgchan <- Message{
-			nickname:    client.player.nickname,
+			nickname:    client.player.Nickname,
 			message:     "",
 			messageType: messageTypeQuit,
 		}
 		log.Printf("Connection from %v closed.\n", c.RemoteAddr())
 		rmchan <- client
 	}()
-	io.WriteString(c, fmt.Sprintf("Welcome, %s!\n\n", client.player.nickname))
 	msgchan <- Message{
-		nickname:    client.player.nickname,
+		nickname:    client.player.Nickname,
 		message:     "",
 		messageType: messageTypeJoin,
 	}
@@ -105,17 +104,26 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
 		io.WriteString(c, "What is your nick? ")
 		nickBytes, _, _ := bufc.ReadLine()
 		nick = string(nickBytes)
+    // TODO: password
+    // TODO: check if user is already logged in
+    // Check for existing player.
+    player, err := GetPlayer(nick)
+    if err == nil {
+	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome back, %s!\n", nick)))
+      log.Printf("Player %+v logged in.\n", player)
+      return player
+    }
+    // Not found so create a new one.
 		log.Printf("Creating new player: %s\n", nick)
-		io.WriteString(c, "What is your real name? ")
+		io.WriteString(c, "You must be new here. What is your real name? ")
 		realnameBytes, _, _ := bufc.ReadLine()
 		realname = string(realnameBytes)
 		log.Printf("Adding real name %s for %s\n", realname, nick)
 		if err := NewPlayer(nick, realname); err != nil {
-			// TODO: check password
 			log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
 			errorCount = errorCount + 1
 		} else {
-			// TODO: check error
+	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome, %s!\n", nick)))
 			player, _ := GetPlayer(nick)
 			return player
 		}

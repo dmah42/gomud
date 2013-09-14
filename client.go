@@ -45,21 +45,21 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 			continue
 		}
 		// TODO: register commands indexed by /<prefix> that create the message to send.
-		log.Printf("%q gave command %q.\n", c.player.nickname, line)
+		log.Printf("%q gave command %q.\n", c.player.Nickname, line)
 		switch {
 		// QUIT
 		case line == "/quit":
 			io.WriteString(c.conn, "Bye!\n")
 			c.conn.Close()
       ch <- Message{
-        nickname:    c.player.nickname,
+        nickname:    c.player.Nickname,
         message:     "",
         messageType: messageTypeQuit,
       }
 		// EMOTE
 		case strings.HasPrefix(line, "/me "):
 			ch <- Message{
-				nickname:    c.player.nickname,
+				nickname:    c.player.Nickname,
 				message:     line[4:],
 				messageType: messageTypeEmote,
 			}
@@ -77,7 +77,7 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 		default:
 			// SAY
 			ch <- Message{
-				nickname:    c.player.nickname,
+				nickname:    c.player.Nickname,
 				message:     line,
 				messageType: messageTypeSay,
 			}

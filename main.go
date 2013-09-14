@@ -14,7 +14,7 @@ import (
 var port = flag.Int("port", 4242, "port to listen on")
 
 func main() {
-  err := LoadPlayerDb()
+  err := playerDb.Load()
   if err != nil {
     fmt.Println(err)
     os.Exit(1)
@@ -107,7 +107,7 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
     // TODO: password
     // TODO: check if user is already logged in
     // Check for existing player.
-    player, err := GetPlayer(nick)
+    player, err := playerDb.Get(nick)
     if err == nil {
 	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome back, %s!\n", nick)))
       log.Printf("Player %+v logged in.\n", player)
@@ -119,13 +119,12 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
 		realnameBytes, _, _ := bufc.ReadLine()
 		realname = string(realnameBytes)
 		log.Printf("Adding real name %s for %s\n", realname, nick)
-		if err := NewPlayer(nick, realname); err != nil {
+		if player, err = playerDb.Add(nick, realname); err == nil {
+	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome, %s!\n", nick)))
+			return player
+    } else {
 			log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
 			errorCount = errorCount + 1
-		} else {
-	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome, %s!\n", nick)))
-			player, _ := GetPlayer(nick)
-			return player
 		}
 	}
 	return nil

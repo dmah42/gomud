@@ -65,10 +65,10 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 			}
 			// WHO
 		case line == "/who":
-			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", GetAllPlayers())))
+			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", playerDb.GetAll())))
 			// FINGER
 		case strings.HasPrefix(line, "/finger "):
-			player, err := GetPlayer(line[8:])
+			player, err := playerDb.Get(line[8:])
 			if err != nil {
 				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
 			} else {

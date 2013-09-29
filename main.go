@@ -13,10 +13,19 @@ import (
 
 var port = flag.Int("port", 4242, "port to listen on")
 
+const playerDbFilename = "player.db"
+const roomDbDir = "rooms/"
+
 func main() {
-  err := playerDb.Load()
+  err := LoadPlayerDb(playerDbFilename)
   if err != nil {
-    fmt.Println(err)
+    fmt.Println("Failed to load player db: %+v", err)
+    os.Exit(1)
+  }
+
+  err = LoadRoomDb(roomDbDir)
+  if err != nil {
+    fmt.Printf("Failed to load room db: %+v\n", err)
     os.Exit(1)
   }
 

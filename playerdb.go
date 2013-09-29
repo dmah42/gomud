@@ -9,12 +9,11 @@ import (
   "sync"
 )
 
-const filename = "player.db"
-
 var playerDb = PlayerDb{}
 
 type PlayerDb struct {
   fileMutex sync.Mutex
+  filename string
 
   memory map[string]Player
 }
@@ -55,38 +54,37 @@ func (db *PlayerDb) Add(nickname, realname string) (*Player, error) {
   return &newPlayer, nil
 }
 
-func (db *PlayerDb) Load() error {
-  db.fileMutex.Lock()
+func LoadPlayerDb(filename string) error {
+  playerDb.fileMutex.Lock()
   f, err := os.OpenFile(filename, os.O_RDONLY | os.O_CREATE, os.ModePerm)
   if err != nil {
-    db.fileMutex.Unlock()
+    playerDb.fileMutex.Unlock()
     return err
   }
-  dbLen, err := f.Seek(0, 2)
+  playerDbLen, err := f.Seek(0, 2)
   if err != nil {
-    db.fileMutex.Unlock()
+    playerDb.fileMutex.Unlock()
     return err
   }
   _, err = f.Seek(0, 0)
   if err != nil {
-    db.fileMutex.Unlock()
+    playerDb.fileMutex.Unlock()
     return err
   }
-  b := make([]byte, dbLen)
+  b := make([]byte, playerDbLen)
 
   _, err = f.Read(b)
+  playerDb.fileMutex.Unlock()
+  playerDb.filename = filename
   if err != nil {
-    db.fileMutex.Unlock()
     return err
   }
   if len(b) > 0 {
-    err = json.Unmarshal(b, &db.memory)
+    err = json.Unmarshal(b, &playerDb.memory)
     if err != nil {
-    db.fileMutex.Unlock()
       return err
     }
   }
-  db.fileMutex.Unlock()
   log.Printf("Loaded player database (%d bytes) from %q.\n", len(b), filename)
   return nil
 }
@@ -97,7 +95,7 @@ func (db *PlayerDb) save() error {
     return err
   }
   db.fileMutex.Lock()
-  f, err := os.OpenFile(filename, os.O_WRONLY, os.ModePerm)
+  f, err := os.OpenFile(db.filename, os.O_WRONLY, os.ModePerm)
   if err != nil {
     db.fileMutex.Unlock()
     return err
@@ -108,7 +106,7 @@ func (db *PlayerDb) save() error {
     return err
   }
   db.fileMutex.Unlock()
-  log.Printf("Saved player database (%d bytes) to %q.\n", len(b), filename)
+  log.Printf("Saved player database (%d bytes) to %q.\n", len(b), db.filename)
 	return nil
 }
 

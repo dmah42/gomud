@@ -1,4 +1,5 @@
 gomud
 =====
 
-A MUD written in Go
+A MUD library and engine written in Go.
+

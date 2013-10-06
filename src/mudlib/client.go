@@ -1,4 +1,5 @@
-package main
+// Package mudlib is a mud engine.
+package mudlib
 
 import (
 	"bufio"
@@ -9,10 +10,10 @@ import (
 	"strings"
 )
 
-type MessageType int
+type messageType int
 
 const ( // message types
-	messageTypeSay MessageType = iota
+	messageTypeSay messageType = iota
 	messageTypeEmote
 	// TODO: merge join and quit?
 	messageTypeJoin
@@ -21,19 +22,19 @@ const ( // message types
 	messageTypeWho
 )
 
-type Message struct {
+type message struct {
 	nickname    string
 	message     string
-	messageType MessageType
+	messageType messageType
 }
 
-type Client struct {
+type client struct {
 	conn   net.Conn
-	player *Player
-	ch     chan Message
+	player *player
+	ch     chan message
 }
 
-func (c Client) ReadLinesInto(ch chan<- Message) {
+func (c client) readLinesInto(ch chan<- message) {
 	bufc := bufio.NewReader(c.conn)
 	for {
 		line, err := bufc.ReadString('\n')
@@ -51,46 +52,46 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 		case line == "/quit":
 			io.WriteString(c.conn, "Bye!\n")
 			c.conn.Close()
-      ch <- Message{
-        nickname:    c.player.Nickname,
-        message:     "",
-        messageType: messageTypeQuit,
-      }
+			ch <- message{
+				nickname:    c.player.Nickname,
+				message:     "",
+				messageType: messageTypeQuit,
+			}
 		// EMOTE
 		case strings.HasPrefix(line, "/me "):
-			ch <- Message{
+			ch <- message{
 				nickname:    c.player.Nickname,
 				message:     line[4:],
 				messageType: messageTypeEmote,
 			}
 			// WHO
 		case line == "/who":
-			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", GetConnected())))
+			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", getConnected())))
 			// FINGER
 		case strings.HasPrefix(line, "/finger "):
-			if player, err := playerDb.Get(line[8:]); err == nil {
-        toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player))
-        if IsConnected(player.Nickname) {
-          toPrint += addColor(colorGreen, colorBlack, "[online]\n")
-        } else {
-          toPrint += addColor(colorRed, colorBlack, "[offline]\n")
-        }
+			if player, err := players.get(line[8:]); err == nil {
+				toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player))
+				if c,_ := player.isConnected(); c {
+					toPrint += addColor(colorGreen, colorBlack, "[online]\n")
+				} else {
+					toPrint += addColor(colorRed, colorBlack, "[offline]\n")
+				}
 				io.WriteString(c.conn, toPrint)
 			} else {
 				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
 			}
-    case line == "look":
-      room, err := roomDb.Get(c.player.Room)
-      if err == nil {
-        io.WriteString(c.conn, room.ToString())
-      } else {
-        // TODO: handle limbo
-        io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
-		    log.Printf("%q in limbo %q.\n", c.player.Nickname, c.player.Room)
-      }
+		case line == "look":
+			room, err := rooms.get(c.player.Room)
+			if err == nil {
+				io.WriteString(c.conn, room.String())
+			} else {
+				// TODO: handle limbo
+				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
+				log.Printf("%q in limbo %q.\n", c.player.Nickname, c.player.Room)
+			}
 		default:
 			// SAY
-			ch <- Message{
+			ch <- message{
 				nickname:    c.player.Nickname,
 				message:     line,
 				messageType: messageTypeSay,
@@ -99,7 +100,7 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 	}
 }
 
-func (c Client) WriteLinesFrom(ch <-chan Message) {
+func (c client) writeLinesFrom(ch <-chan message) {
 	for msg := range ch {
 		toPrint := ""
 		// TODO: Register command per message type for colors/format string.

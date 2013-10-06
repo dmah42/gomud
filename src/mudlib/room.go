@@ -13,7 +13,7 @@ type room struct {
 	playerNicks []string
 }
 
-func (r *room) String() string {
+func (r *room) describe() string {
 	// TODO: add color. Look up exit names.
 	str := fmt.Sprintf("%s\n%s\n", r.name, r.description)
 	if len(r.exitIds) != 0 {

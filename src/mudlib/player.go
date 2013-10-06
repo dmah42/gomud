@@ -28,9 +28,9 @@ func (p *player) connect() {
 }
 
 func (p *player) disconnect() {
-  if c, index := p.isConnected(); c {
-	  connected = append(connected[:index], connected[index+1:]...)
-    return
+	if c, index := p.isConnected(); c {
+		connected = append(connected[:index], connected[index+1:]...)
+		return
 	}
 	log.Fatalf("User %q is disconnecting without connecting\n", p.Nickname)
 }

@@ -71,7 +71,7 @@ func (c client) readLinesInto(ch chan<- message) {
 		case strings.HasPrefix(line, "/finger "):
 			if player, err := players.get(line[8:]); err == nil {
 				toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player.finger()))
-				if c,_ := player.isConnected(); c {
+				if c, _ := player.isConnected(); c {
 					toPrint += addColor(colorGreen, colorBlack, "[online]\n")
 				} else {
 					toPrint += addColor(colorRed, colorBlack, "[offline]\n")
@@ -83,7 +83,7 @@ func (c client) readLinesInto(ch chan<- message) {
 		case line == "look":
 			room, err := rooms.get(c.player.Room)
 			if err == nil {
-				io.WriteString(c.conn, room.String())
+				io.WriteString(c.conn, room.describe())
 			} else {
 				// TODO: handle limbo
 				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))

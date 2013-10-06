@@ -1,3 +1,4 @@
+// Binary main defines an mud server.
 package main
 
 import (

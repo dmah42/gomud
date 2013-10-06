@@ -70,7 +70,7 @@ func (c client) readLinesInto(ch chan<- message) {
 			// FINGER
 		case strings.HasPrefix(line, "/finger "):
 			if player, err := players.get(line[8:]); err == nil {
-				toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player))
+				toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player.finger()))
 				if c,_ := player.isConnected(); c {
 					toPrint += addColor(colorGreen, colorBlack, "[online]\n")
 				} else {

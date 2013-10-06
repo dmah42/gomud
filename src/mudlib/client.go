@@ -14,16 +14,17 @@ type messageType int
 
 const ( // message types
 	messageTypeSay messageType = iota
+  messageTypeTell
 	messageTypeEmote
-	// TODO: merge join and quit?
-	messageTypeJoin
-	messageTypeQuit
-
+  messageTypeShout
+  messageTypeJoin
+  messageTypeQuit
 	messageTypeWho
 )
 
 type message struct {
-	nickname    string
+	from    client
+  to      string
 	message     string
 	messageType messageType
 }
@@ -53,18 +54,49 @@ func (c client) readLinesInto(ch chan<- message) {
 			io.WriteString(c.conn, "Bye!\n")
 			c.conn.Close()
 			ch <- message{
-				nickname:    c.player.Nickname,
+				from:    c,
 				message:     "",
 				messageType: messageTypeQuit,
 			}
+		// SAY
+    case strings.HasPrefix(line, "/say "):
+			ch <- message{
+				from:    c,
+				message:     line[5:],
+				messageType: messageTypeSay,
+			}
+    // TELL
+    case strings.HasPrefix(line, "/tell "):
+      // TODO: use fields to parse better
+      if player, err := players.get(line[6:]); err == nil {
+        if conn, _ := player.isConnected(); conn {
+          ch <- message{
+            from: c,
+            to: player.Nickname,
+            message: line[6:],
+            messageType: messageTypeTell,
+          }
+        } else {
+          io.WriteString(c.conn, fmt.Sprintf("%q does not appear to be online.\n", line[6:]))
+        }
+      } else {
+        io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
+      }
 		// EMOTE
 		case strings.HasPrefix(line, "/me "):
 			ch <- message{
-				nickname:    c.player.Nickname,
+				from:    c,
 				message:     line[4:],
 				messageType: messageTypeEmote,
 			}
-			// WHO
+    // SHOUT
+    case strings.HasPrefix(line, "/shout "):
+      ch <- message{
+        from: c,
+        message: line[7:],
+        messageType: messageTypeShout,
+      }
+		// WHO
 		case line == "/who":
 			io.WriteString(c.conn, setFg(colorWhite, fmt.Sprintf("%v\n", getConnected())))
 			// FINGER
@@ -90,37 +122,54 @@ func (c client) readLinesInto(ch chan<- message) {
 				log.Printf("%q in limbo %q.\n", c.player.Nickname, c.player.Room)
 			}
 		default:
-			// SAY
-			ch <- message{
-				nickname:    c.player.Nickname,
-				message:     line,
-				messageType: messageTypeSay,
-			}
+      // TODO: handle exits, etc
+      log.Printf("Unknown command: %q\n", line)
 		}
 	}
 }
 
+func sameRoom(c client, msg message) bool {
+  return c.player.Room == msg.from.player.Room
+}
+
 func (c client) writeLinesFrom(ch <-chan message) {
 	for msg := range ch {
+    from := msg.from.player.Nickname
 		toPrint := ""
-		// TODO: Register command per message type for colors/format string.
-		switch {
-		case msg.messageType == messageTypeSay:
-			toPrint = setFg(colorYellow, fmt.Sprintf("%s says %s", msg.nickname, msg.message))
-		case msg.messageType == messageTypeEmote:
-			toPrint = setFg(colorMagenta, fmt.Sprintf("%s %s", msg.nickname, msg.message))
-		case msg.messageType == messageTypeQuit:
-			toPrint = setFgBold(colorRed, fmt.Sprintf("%s has quit.", msg.nickname))
-		case msg.messageType == messageTypeJoin:
-			toPrint = setFgBold(colorRed, fmt.Sprintf("%s has joined.", msg.nickname))
-		case msg.messageType == messageTypeWho:
+		// TODO: Register command per message type for colors/format string and location restriction
+		switch msg.messageType {
+		case messageTypeSay:
+      if sameRoom(c, msg) {
+			  toPrint = setFg(colorYellow, fmt.Sprintf("%s says %s", from, msg.message))
+      }
+    case messageTypeTell:
+      if msg.to == c.player.Nickname {
+        toPrint = setFg(colorGreen, fmt.Sprintf("%s tells you %s", from, msg.message))
+      }
+		case messageTypeEmote:
+      if sameRoom(c, msg) {
+        toPrint = setFg(colorMagenta, fmt.Sprintf("%s %s", from, msg.message))
+      }
+    case messageTypeShout:
+      toPrint = setFgBold(colorCyan, fmt.Sprintf("%s shouts %s", from, msg.message))
+		case messageTypeQuit:
+      if sameRoom(c, msg) {
+			  toPrint = setFgBold(colorRed, fmt.Sprintf("%s has quit.", from))
+      }
+		case messageTypeJoin:
+      if sameRoom(c, msg) {
+        toPrint = setFgBold(colorRed, fmt.Sprintf("%s has joined.", from))
+      }
 		default:
-			log.Printf("Unknown message type: %+v", msg)
-			return
+			log.Printf("Unhandled message type: %+v", msg)
+			continue
 		}
+    if len(toPrint) == 0 {
+      continue
+    }
 		_, err := io.WriteString(c.conn, toPrint+"\n")
 		if err != nil {
-			return
+      log.Printf("Error writing '%q'\n", toPrint)
 		}
 	}
 }

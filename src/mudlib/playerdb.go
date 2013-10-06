@@ -58,7 +58,7 @@ func (db *playerDb) get(nickname string) (*player, error) {
 	if player, ok := db.memory[nickname]; ok {
 		return &player, nil
 	}
-	return nil, fmt.Errorf("Player %q not found")
+	return nil, fmt.Errorf("Player %q not found", nickname)
 }
 
 func (db *playerDb) getAll() []string {

@@ -49,7 +49,7 @@ func handleConnection(c net.Conn, msgchan chan<- message, addchan chan<- client,
 	}
 	addchan <- newClient
 	msgchan <- message{
-		nickname:    newClient.player.Nickname,
+		from:    newClient,
 		message:     "",
 		messageType: messageTypeJoin,
 	}
@@ -58,7 +58,7 @@ func handleConnection(c net.Conn, msgchan chan<- message, addchan chan<- client,
 
 	defer func() {
 		msgchan <- message{
-			nickname:    newClient.player.Nickname,
+			from:    newClient,
 			message:     "",
 			messageType: messageTypeQuit,
 		}

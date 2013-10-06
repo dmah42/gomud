@@ -66,15 +66,15 @@ func (c client) readLinesInto(ch chan<- message) {
 			}
 			// WHO
 		case line == "/who":
-			io.WriteString(c.conn, addColor(colorWhite, colorBlack, fmt.Sprintf("%v\n", getConnected())))
+			io.WriteString(c.conn, setFg(colorWhite, fmt.Sprintf("%v\n", getConnected())))
 			// FINGER
 		case strings.HasPrefix(line, "/finger "):
 			if player, err := players.get(line[8:]); err == nil {
-				toPrint := addColor(colorWhite, colorBlack, fmt.Sprintf("%+v ", player.finger()))
+				toPrint := setFg(colorWhite, fmt.Sprintf("%+v ", player.finger()))
 				if c, _ := player.isConnected(); c {
-					toPrint += addColor(colorGreen, colorBlack, "[online]\n")
+					toPrint += setFgBold(colorGreen, "[online]\n")
 				} else {
-					toPrint += addColor(colorRed, colorBlack, "[offline]\n")
+					toPrint += setFgBold(colorRed, "[offline]\n")
 				}
 				io.WriteString(c.conn, toPrint)
 			} else {
@@ -106,13 +106,13 @@ func (c client) writeLinesFrom(ch <-chan message) {
 		// TODO: Register command per message type for colors/format string.
 		switch {
 		case msg.messageType == messageTypeSay:
-			toPrint = addColor(colorYellow, colorBlack, fmt.Sprintf("%s says %s", msg.nickname, msg.message))
+			toPrint = setFg(colorYellow, fmt.Sprintf("%s says %s", msg.nickname, msg.message))
 		case msg.messageType == messageTypeEmote:
-			toPrint = addColor(colorGreen, colorBlack, fmt.Sprintf("%s %s", msg.nickname, msg.message))
+			toPrint = setFg(colorMagenta, fmt.Sprintf("%s %s", msg.nickname, msg.message))
 		case msg.messageType == messageTypeQuit:
-			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has quit.", msg.nickname))
+			toPrint = setFgBold(colorRed, fmt.Sprintf("%s has quit.", msg.nickname))
 		case msg.messageType == messageTypeJoin:
-			toPrint = addColor(colorRed, colorBlack, fmt.Sprintf("%s has joined.", msg.nickname))
+			toPrint = setFgBold(colorRed, fmt.Sprintf("%s has joined.", msg.nickname))
 		case msg.messageType == messageTypeWho:
 		default:
 			log.Printf("Unknown message type: %+v", msg)

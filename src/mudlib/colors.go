@@ -17,6 +17,14 @@ const (
 	colorWhite
 )
 
-func addColor(fg, bg color, s string) string {
-	return fmt.Sprintf("\033[1;%d;%dm%s\033[0m", 30+int(fg), 40+int(bg), s)
+func (c color) toFg() int { return 30 + int(c) }
+// TODO: background colors
+// func (c color) toBg() int { return 40 + int(c) }
+
+func setFg(c color, s string) string {
+  return fmt.Sprintf("\033[0;%dm%s\033[0m", c.toFg(), s)
+}
+
+func setFgBold(c color, s string) string {
+  return fmt.Sprintf("\033[1;%dm%s\033[0m", c.toFg(), s)
 }

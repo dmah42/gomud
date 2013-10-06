@@ -92,7 +92,7 @@ func handleMessages(msgchan <-chan message, addchan <-chan client, rmchan <-chan
 
 func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 	// TODO: custom prompts
-	io.WriteString(c, addColor(colorMagenta, colorBlack, "Welcome... to the real world")+"\n")
+	io.WriteString(c, setFgBold(colorMagenta, "Welcome... to the real world")+"\n")
 	errorCount := 0
 	var nick, realname string
 	for errorCount < 3 {
@@ -104,7 +104,7 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 		// Check for existing player.
 		player, err := players.get(nick)
 		if err == nil {
-			io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome back, %s!\n", nick)))
+			io.WriteString(c, setFgBold(colorGreen, fmt.Sprintf("Welcome back, %s!\n", nick)))
 			// TODO: startup commands
 			log.Printf("Player %+v logged in.\n", player)
 			return player
@@ -116,7 +116,7 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 		realname = string(realnameBytes)
 		log.Printf("Adding real name %s for %s\n", realname, nick)
 		if player, err = players.add(nick, realname); err == nil {
-			io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome, %s!\n", nick)))
+			io.WriteString(c, setFgBold(colorGreen, fmt.Sprintf("Welcome, %s!\n", nick)))
 			player.Room = startRoomId
 			return player
 		} else {

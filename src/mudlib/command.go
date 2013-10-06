@@ -176,7 +176,6 @@ func (c command) printUsage(cmd string) string {
 func doCommand(cl client, ch chan<- message, cmd string, args []string) error {
   if c, ok := commands[cmd[1:]]; ok {
     if (c.minArgs != -1 && len(args) < c.minArgs) || (c.maxArgs != -1 && len(args) > c.maxArgs) {
-      // TODO: manage multiple usage options.
       io.WriteString(cl.conn, c.printUsage(cmd))
       return nil
     }

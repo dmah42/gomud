@@ -46,121 +46,13 @@ func (c client) readLinesInto(ch chan<- message) {
 		if len(line) == 0 {
 			continue
 		}
-		// TODO: register commands indexed by /<prefix> that create the message to send.
 		log.Printf("%q gave command %q.\n", c.player.Nickname, line)
 
-    // TODO: split command handling into separate file
     parts := strings.Fields(line)
-		switch parts[0] {
-		// QUIT
-		case "/quit":
-      if len(parts) != 1 {
-        io.WriteString(c.conn, "Usage: /quit\n")
-        continue
-      }
-			io.WriteString(c.conn, "Bye!\n")
-			c.conn.Close()
-			ch <- message{
-				from:    c,
-				message:     "",
-				messageType: messageTypeQuit,
-			}
-		// SAY
-    case "/say":
-      if len(parts) == 1 {
-        io.WriteString(c.conn, "Usage: /say <message>\n")
-        continue
-      }
-			ch <- message{
-				from:    c,
-				message:     strings.Join(parts[1:], " "),
-				messageType: messageTypeSay,
-			}
-    // TELL
-    case "/tell":
-      if len(parts) <= 3 {
-        io.WriteString(c.conn, "Usage: /tell <player> <message>\n")
-        continue
-      }
-      if player, err := players.get(parts[1]); err == nil {
-        if conn, _ := player.isConnected(); conn {
-          ch <- message{
-            from: c,
-            to: player.Nickname,
-            message: strings.Join(parts[2:], " "),
-            messageType: messageTypeTell,
-          }
-        } else {
-          io.WriteString(c.conn, fmt.Sprintf("%q does not appear to be online.\n", line[6:]))
-        }
-      } else {
-        io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
-      }
-		// EMOTE
-		case "/me":
-      if len(parts) == 1 {
-        io.WriteString(c.conn, "Usage: /me <emotes>\n")
-        continue
-      }
-			ch <- message{
-				from:    c,
-				message:     strings.Join(parts[1:], " "),
-				messageType: messageTypeEmote,
-			}
-    // SHOUT
-    case "/shout":
-      if len(parts) == 1 {
-        io.WriteString(c.conn, "Usage: /shout <message>\n")
-        continue
-      }
-      ch <- message{
-        from: c,
-        message: strings.Join(parts[1:], " "),
-        messageType: messageTypeShout,
-      }
-		// WHO
-		case "/who":
-      if len(parts) != 2 {
-        io.WriteString(c.conn, "Usage: /who <player>\n")
-        continue
-      }
-			io.WriteString(c.conn, setFg(colorWhite, fmt.Sprintf("%v\n", getConnected())))
-			// FINGER
-		case "/finger":
-      if len(parts) != 2 {
-        io.WriteString(c.conn, "Usage: /finger <player>\n")
-        continue
-      }
-			if player, err := players.get(parts[1]); err == nil {
-				toPrint := setFg(colorWhite, fmt.Sprintf("%+v ", player.finger()))
-				if c, _ := player.isConnected(); c {
-					toPrint += setFgBold(colorGreen, "[online]\n")
-				} else {
-					toPrint += setFgBold(colorRed, "[offline]\n")
-				}
-				io.WriteString(c.conn, toPrint)
-			} else {
-				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
-			}
-// LOOK
-		case "look":
-      if len(parts) == 1 {
-        room, err := rooms.get(c.player.Room)
-        if err == nil {
-          io.WriteString(c.conn, room.describe())
-        } else {
-          // TODO: handle limbo
-          io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
-          log.Printf("%q in limbo %q.\n", c.player.Nickname, c.player.Room)
-        }
-      } else {
-        // TODO: look at object/person
-      }
-      // TODO: handle exits, etc
-		default:
-      log.Printf("Unknown command: %q\n", line)
-		}
-	}
+    if err := doCommand(c, ch, parts[0], parts[1:]); err != nil {
+      log.Printf("%+v doing command %q\n", err, line)
+    }
+  }
 }
 
 func sameRoom(c client, msg message) bool {

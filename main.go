@@ -15,6 +15,7 @@ var port = flag.Int("port", 4242, "port to listen on")
 
 const playerDbFilename = "player.db"
 const roomDbDir = "rooms/"
+const startRoomId = "start"
 
 func main() {
   err := LoadPlayerDb(playerDbFilename)
@@ -123,6 +124,7 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
     player, err := playerDb.Get(nick)
     if err == nil {
 	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome back, %s!\n", nick)))
+      // TODO: startup commands
       log.Printf("Player %+v logged in.\n", player)
       return player
     }
@@ -134,6 +136,7 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *Player {
 		log.Printf("Adding real name %s for %s\n", realname, nick)
 		if player, err = playerDb.Add(nick, realname); err == nil {
 	    io.WriteString(c, addColor(colorGreen, colorBlack, fmt.Sprintf("Welcome, %s!\n", nick)))
+      player.Room = startRoomId
 			return player
     } else {
 			log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)

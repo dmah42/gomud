@@ -79,6 +79,15 @@ func (c Client) ReadLinesInto(ch chan<- Message) {
 			} else {
 				io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
 			}
+    case line == "look":
+      room, err := roomDb.Get(c.player.Room)
+      if err == nil {
+        io.WriteString(c.conn, room.ToString())
+      } else {
+        // TODO: handle limbo
+        io.WriteString(c.conn, fmt.Sprintf("%q.\n", err))
+		    log.Printf("%q in limbo %q.\n", c.player.Nickname, c.player.Room)
+      }
 		default:
 			// SAY
 			ch <- Message{

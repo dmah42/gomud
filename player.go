@@ -12,6 +12,7 @@ var connected = make([]string, 0)
 type Player struct {
 	Nickname string
 	Realname string
+  Room  string
 }
 
 func (player *Player) String() string {

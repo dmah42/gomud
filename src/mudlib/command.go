@@ -91,7 +91,8 @@ func init() {
 		maxArgs: 0,
 		usage:   []string{""},
 		do: func(cl client, args []string) (*string, *message) {
-			ret := setFg(colorWhite, fmt.Sprintf("%v\n", getConnected()))
+      connected := getConnected()
+      ret := fmt.Sprintf("There are currently %d players connected:\n  %s\n", len(connected), strings.Join(getConnected(), ", "))
 			return &ret, nil
 		},
 	}

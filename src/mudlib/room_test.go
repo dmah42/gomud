@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDescribe(t *testing.T) {
+func TestRoomDescribe(t *testing.T) {
 	cases := []struct {
 		r    room
 		wantDescription string
@@ -27,10 +27,10 @@ func TestDescribe(t *testing.T) {
 	}
 }
 
-func TestAddPlayer(t *testing.T) {
+func TestRoomAddPlayer(t *testing.T) {
 // TODO
 }
 
-func TestRemovePlayer(t *testing.T) {
+func TestRoomRemovePlayer(t *testing.T) {
 // TODO
 }

@@ -22,7 +22,12 @@ type roomDb struct {
 func LoadRoomDb(roomDir, startId string) error {
 	startRoomId = startId
 	rooms.memory = make(map[string]room)
-	return filepath.Walk(roomDir, addRoom)
+	return filepath.Walk(roomDir, func(path string, fi os.FileInfo, err error) error {
+    if err != nil {
+      return err
+    }
+    return rooms.add(path, fi)
+  })
 }
 
 func (db *roomDb) get(id string) (*room, error) {
@@ -32,35 +37,31 @@ func (db *roomDb) get(id string) (*room, error) {
 	return nil, fmt.Errorf("Room %q not found", id)
 }
 
-func addRoom(path string, fi os.FileInfo, err error) error {
-	if err != nil {
-		return err
-	}
-
+func (db *roomDb) add(path string, fi os.FileInfo) error {
 	if fi.IsDir() {
 		return nil
 	}
 
-	rooms.fileMutex.Lock()
+	db.fileMutex.Lock()
 	f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
-		rooms.fileMutex.Unlock()
+		db.fileMutex.Unlock()
 		return err
 	}
 	roomLen, err := f.Seek(0, 2)
 	if err != nil {
-		rooms.fileMutex.Unlock()
+		db.fileMutex.Unlock()
 		return err
 	}
 	_, err = f.Seek(0, 0)
 	if err != nil {
-		rooms.fileMutex.Unlock()
+		db.fileMutex.Unlock()
 		return err
 	}
 	b := make([]byte, roomLen)
 
 	_, err = f.Read(b)
-	rooms.fileMutex.Unlock()
+	db.fileMutex.Unlock()
 	if err != nil {
 		return err
 	}
@@ -78,11 +79,11 @@ func addRoom(path string, fi os.FileInfo, err error) error {
 			return err
 		}
 		id := path[strings.LastIndex(path, "/")+1:]
-		rooms.memory[id] = room{
+		db.memory[id] = room{
 			name:        newRoom.Name,
 			description: newRoom.Description,
 			exitIds:     newRoom.ExitIds,
-      playerNicks:   make([]string, 0),
+      playerNicks: make([]string, 0),
 		}
 		log.Printf("Loaded room %q from %q.\n", id, path)
 	}

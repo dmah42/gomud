@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFinger(t *testing.T) {
+func TestPlayerFinger(t *testing.T) {
 	cases := []struct {
 		p    player
 		want string
@@ -28,7 +28,7 @@ func TestFinger(t *testing.T) {
 	}
 }
 
-func TestIsConnected(t *testing.T) {
+func TestPlayerIsConnected(t *testing.T) {
 	cases := []struct {
 		p           player
 		wantConnect bool
@@ -65,7 +65,7 @@ func TestIsConnected(t *testing.T) {
   connected = make([]string, 0)
 }
 
-func TestConnect(t *testing.T) {
+func TestPlayerConnect(t *testing.T) {
 	cases := []struct {
 		p           player
 		wantConnect bool
@@ -94,7 +94,7 @@ func TestConnect(t *testing.T) {
   connected = make([]string, 0)
 }
 
-func TestDisconnect(t *testing.T) {
+func TestPlayerDisconnect(t *testing.T) {
 	cases := []struct {
 		p           player
 		wantDisconnect bool
@@ -124,7 +124,7 @@ func TestDisconnect(t *testing.T) {
   connected = make([]string, 0)
 }
 
-func TestGetConnected(t *testing.T) {
+func TestPlayerGetConnected(t *testing.T) {
 	cases := []struct {
 		p           []player
 		wantGetConnected []string

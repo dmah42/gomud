@@ -17,7 +17,7 @@ type player struct {
 }
 
 func (p *player) finger() string {
-	return fmt.Sprintf("%q (%q)", p.Nickname, p.Realname)
+	return fmt.Sprintf("%s (%s)", p.Nickname, p.Realname)
 }
 
 func (p *player) connect() {

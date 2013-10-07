@@ -17,10 +17,10 @@ func (r *room) describe() string {
 	// TODO: add color. Look up exit names.
 	str := fmt.Sprintf("%s\n%s\n", r.name, r.description)
 	if len(r.exitIds) != 0 {
-		str = str + fmt.Sprintf("Exits: %s\n", strings.Join(r.exitIds, ","))
+		str = str + fmt.Sprintf("Exits: %s\n", strings.Join(r.exitIds, ", "))
 	}
 	if len(r.playerNicks) != 0 {
-		str = str + fmt.Sprintf("%s are here.\n", strings.Join(r.playerNicks, ","))
+		str = str + fmt.Sprintf("%s are here.\n", strings.Join(r.playerNicks, ", "))
 	}
 	return str
 }

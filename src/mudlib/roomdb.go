@@ -82,6 +82,7 @@ func addRoom(path string, fi os.FileInfo, err error) error {
 			name:        newRoom.Name,
 			description: newRoom.Description,
 			exitIds:     newRoom.ExitIds,
+      playerNicks:   make([]string, 0),
 		}
 		log.Printf("Loaded room %q from %q.\n", id, path)
 	}

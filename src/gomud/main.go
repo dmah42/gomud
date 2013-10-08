@@ -11,9 +11,9 @@ import (
 var port = flag.Int("port", 4242, "port to listen on")
 
 const (
-  playerDir = "players/"
-  roomDir = "rooms/"
-  startRoomId = "start"
+	playerDir   = "players/"
+	roomDir     = "rooms/"
+	startRoomId = "start"
 )
 
 func main() {

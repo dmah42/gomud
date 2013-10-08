@@ -46,6 +46,7 @@ func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 		ch:     make(chan message),
 	}
 	if newClient.player == nil {
+    io.WriteString(c, "Goodbye.")
 		return
 	}
 	addchan <- newClient
@@ -122,10 +123,16 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 		nickBytes, _, _ := bufc.ReadLine()
 		nick = string(nickBytes)
 		// TODO: password
-		// TODO: check if user is already logged in
 		// Check for existing player.
 		player, err := players.get(nick)
 		if err == nil {
+		  // check if user is already logged in
+      if con, _ := player.isConnected(); con {
+        io.WriteString(c, setFgBold(colorRed, fmt.Sprintf("%s is already connected. Please try again.\n", nick)))
+			  errorCount++
+        continue
+      }
+
 			io.WriteString(c, setFgBold(colorGreen, fmt.Sprintf("Welcome back, %s!\n", nick)))
 			log.Printf("Player %+v logged in.\n", player)
 			return player
@@ -140,10 +147,9 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 			io.WriteString(c, setFgBold(colorGreen, fmt.Sprintf("Welcome, %s!\n", nick)))
 			player.Room = startRoomId
 			return player
-		} else {
-			log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
-			errorCount = errorCount + 1
 		}
+    log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
+    errorCount++
 	}
 	return nil
 }

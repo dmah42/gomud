@@ -41,12 +41,12 @@ func TestRoomDescribe(t *testing.T) {
 		},
 		{
 			r:               room{name: "room2", description: "another room", exits: map[string]string{}, playerNicks: []string{"a", "b"}},
-			p:               player{Nickname: "b"},
+			p:               player{nickname: "b"},
 			wantDescription: "room2\nanother room\na is here.\n",
 		},
 		{
 			r:               room{name: "room2", description: "another room", exits: map[string]string{}, playerNicks: []string{"a", "b"}},
-			p:               player{Nickname: "c"},
+			p:               player{nickname: "c"},
 			wantDescription: "room2\nanother room\na, b are here.\n",
 		},
 	}

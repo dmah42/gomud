@@ -26,7 +26,7 @@ func (r room) describe(p player) string {
 		str = str + fmt.Sprintf("Exits: %s\n", strings.Join(r.exitDirs(), ", "))
 	}
 	playerList := r.playerNicks
-	removeStringFromList(p.Nickname, &playerList)
+	removeStringFromList(p.nickname, &playerList)
 	if len(playerList) == 1 {
 		str = str + fmt.Sprintf("%s is here.\n", playerList[0])
 	} else if len(playerList) > 1 {

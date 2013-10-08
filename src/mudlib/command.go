@@ -55,7 +55,7 @@ func init() {
 			}
 			if conn, _ := player.isConnected(); conn {
 				return nil, &message{
-					to:          player.Nickname,
+					to:          player.nickname,
 					message:     strings.Join(args[1:], " "),
 					messageType: messageTypeTell,
 				}
@@ -123,12 +123,16 @@ func init() {
 			switch len(args) {
 			case 0:
 				// room look
-				if room, err := rooms.get(cl.player.Room); err == nil {
-					desc := room.describe(*cl.player)
+				player, err := players.get(cl.player)
+				if err != nil {
+					log.Fatalf("%+v", err)
+				}
+				if room, err := rooms.get(player.room); err == nil {
+					desc := room.describe(*player)
 					return &desc, nil
 				}
 				// TODO: handle limbo
-				log.Printf("%+v in limbo.\n", cl.player)
+				log.Printf("%+v in limbo.\n", player)
 				desc := "You're in limbo.\n"
 				return &desc, nil
 			default:
@@ -169,9 +173,13 @@ func init() {
 		maxArgs: 1,
 		usage:   []string{"<direction>"},
 		do: func(cl client, args []string) (*string, *message) {
-			room, err := rooms.get(cl.player.Room)
+			player, err := players.get(cl.player)
 			if err != nil {
-				log.Printf("Player is in non-existant room %q\n", cl.player.Room)
+				log.Fatalf("%+v", err)
+			}
+			room, err := rooms.get(player.room)
+			if err != nil {
+				log.Printf("Player is in non-existant room %q\n", player.room)
 				return nil, nil
 			}
 			newRoomName := room.exits[args[0]]
@@ -180,19 +188,19 @@ func init() {
 				ret := fmt.Sprintf("Unknown direction %q, %q.\n", args[0], newRoomName)
 				return &ret, nil
 			}
-			if err := room.removePlayer(cl.player.Nickname); err != nil {
+			if err := room.removePlayer(cl.player); err != nil {
 				log.Printf("%+v", err)
 			}
 			msgchan <- message{
 				from:        cl,
-				message:     cl.player.Room,
+				message:     player.room,
 				messageType: messageTypeLeaveRoom,
 			}
-			cl.player.Room = newRoomName
-			newRoom.addPlayer(cl.player.Nickname)
+			player.room = newRoomName
+			newRoom.addPlayer(player.nickname)
 			msgchan <- message{
 				from:        cl,
-				message:     cl.player.Room,
+				message:     player.room,
 				messageType: messageTypeEnterRoom,
 			}
 			ret := setFg(colorCyan, fmt.Sprintf("You go %s.\n", args[0]))

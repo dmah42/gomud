@@ -31,10 +31,9 @@ type message struct {
 	messageType messageType
 }
 
-// TODO: client should only hold the nick of the player
 type client struct {
 	conn   net.Conn
-	player *player
+	player string
 	ch     chan message
 }
 
@@ -49,7 +48,7 @@ func (c client) readLines() {
 		if len(line) == 0 {
 			continue
 		}
-		log.Printf("%q gave command %q.\n", c.player.Nickname, line)
+		log.Printf("%q gave command %q.\n", c.player, line)
 
 		parts := strings.Fields(line)
 		if err := doCommand(c, parts[0], parts[1:]); err != nil {
@@ -59,12 +58,22 @@ func (c client) readLines() {
 }
 
 func sameRoom(c client, msg message) bool {
-	return c.player.Room == msg.from.player.Room
+	player, err := players.get(c.player)
+	if err != nil {
+		log.Fatalf("%+v", err)
+		return false
+	}
+	fromPlayer, err := players.get(msg.from.player)
+	if err != nil {
+		log.Fatalf("%+v", err)
+		return false
+	}
+	return player.room == fromPlayer.room
 }
 
 func (c client) writeLinesFrom(ch <-chan message) {
 	for msg := range ch {
-		from := msg.from.player.Nickname
+		from := msg.from.player
 		toPrint := ""
 		// TODO: Register command per message type for colors/format string and location restriction
 		switch msg.messageType {
@@ -79,7 +88,7 @@ func (c client) writeLinesFrom(ch <-chan message) {
 		case messageTypeTell:
 			if msg.from == c {
 				toPrint = setFg(colorGreen, fmt.Sprintf("You tell %s \"%s\".", msg.to, msg.message))
-			} else if msg.to == c.player.Nickname {
+			} else if msg.to == c.player {
 				toPrint = setFg(colorGreen, fmt.Sprintf("%s tells you \"%s\".", from, msg.message))
 			}
 		case messageTypeEmote:
@@ -117,7 +126,12 @@ func (c client) writeLinesFrom(ch <-chan message) {
 				toPrint = setFg(colorCyan, fmt.Sprintf("%s enters.", from))
 			}
 		case messageTypeLeaveRoom:
-			if c.player.Room == msg.message && msg.from != c {
+			player, err := players.get(c.player)
+			if err != nil {
+				log.Fatalf("%+v", err)
+				continue
+			}
+			if player.room == msg.message && msg.from != c {
 				toPrint = setFg(colorCyan, fmt.Sprintf("%s leaves.", from))
 			}
 		default:

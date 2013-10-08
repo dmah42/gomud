@@ -11,11 +11,11 @@ func TestPlayerFinger(t *testing.T) {
 		want string
 	}{
 		{
-			p:    player{Nickname: "nick", Realname: "real", Room: "room"},
+			p:    player{nickname: "nick", realname: "real", room: "room"},
 			want: "nick (real)",
 		},
 		{
-			p:    player{Nickname: "nick_name", Realname: "real name", Room: "room"},
+			p:    player{nickname: "nick_name", realname: "real name", room: "room"},
 			want: "nick_name (real name)",
 		},
 	}
@@ -35,24 +35,24 @@ func TestPlayerIsConnected(t *testing.T) {
 		wantIndex   int
 	}{
 		{
-			p:           player{Nickname: "b", Realname: "bob", Room: "beehive"},
+			p:           player{nickname: "b", realname: "bob", room: "beehive"},
 			wantConnect: true,
 			wantIndex:   1,
 		},
 		{
-			p:           player{Nickname: "a", Realname: "alice", Room: "aviary"},
+			p:           player{nickname: "a", realname: "alice", room: "aviary"},
 			wantConnect: true,
 			wantIndex:   0,
 		},
 		{
-			p:           player{Nickname: "c", Realname: "charles", Room: "chapel"},
+			p:           player{nickname: "c", realname: "charles", room: "chapel"},
 			wantConnect: false,
 			wantIndex:   2,
 		},
 	}
 	for _, tt := range cases {
 		if tt.wantConnect {
-			connected = append(connected, tt.p.Nickname)
+			connected = append(connected, tt.p.nickname)
 		}
 	}
 
@@ -71,11 +71,11 @@ func TestPlayerConnect(t *testing.T) {
 		wantConnect bool
 	}{
 		{
-			p:           player{Nickname: "a", Realname: "alice", Room: "aviary"},
+			p:           player{nickname: "a", realname: "alice", room: "aviary"},
 			wantConnect: true,
 		},
 		{
-			p:           player{Nickname: "b", Realname: "bob", Room: "beehive"},
+			p:           player{nickname: "b", realname: "bob", room: "beehive"},
 			wantConnect: false,
 		},
 	}
@@ -100,11 +100,11 @@ func TestPlayerDisconnect(t *testing.T) {
 		wantDisconnect bool
 	}{
 		{
-			p:              player{Nickname: "a", Realname: "alice", Room: "aviary"},
+			p:              player{nickname: "a", realname: "alice", room: "aviary"},
 			wantDisconnect: true,
 		},
 		{
-			p:              player{Nickname: "b", Realname: "bob", Room: "beehive"},
+			p:              player{nickname: "b", realname: "bob", room: "beehive"},
 			wantDisconnect: false,
 		},
 	}
@@ -131,9 +131,9 @@ func TestPlayerGetConnected(t *testing.T) {
 	}{
 		{
 			p: []player{
-				player{Nickname: "b", Realname: "bob", Room: "beehive"},
-				player{Nickname: "a", Realname: "alice", Room: "aviary"},
-				player{Nickname: "c", Realname: "charles", Room: "chapel"},
+				player{nickname: "b", realname: "bob", room: "beehive"},
+				player{nickname: "a", realname: "alice", room: "aviary"},
+				player{nickname: "c", realname: "charles", room: "chapel"},
 			},
 			wantGetConnected: []string{"a", "b", "c"},
 		},

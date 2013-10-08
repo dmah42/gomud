@@ -7,14 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
 var rooms = roomDb{}
 var startRoomId string
 
 type roomDb struct {
-	fileMutex sync.Mutex
 	memory    map[string]*room
 }
 
@@ -31,7 +29,7 @@ func LoadRoomDb(roomDir, startId string) error {
 		if err != nil {
 			return err
 		}
-		return rooms.add(path, fi)
+		return rooms.load(path, fi)
 	})
 }
 
@@ -42,47 +40,23 @@ func (db roomDb) get(id string) (*room, error) {
 	return nil, fmt.Errorf("Room %q not found", id)
 }
 
-func (db *roomDb) add(path string, fi os.FileInfo) error {
+func (db *roomDb) load(path string, fi os.FileInfo) error {
 	if fi.IsDir() {
 		return nil
 	}
 
-	db.fileMutex.Lock()
-	f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		db.fileMutex.Unlock()
-		return err
-	}
-	roomLen, err := f.Seek(0, 2)
-	if err != nil {
-		db.fileMutex.Unlock()
-		return err
-	}
-	_, err = f.Seek(0, 0)
-	if err != nil {
-		db.fileMutex.Unlock()
-		return err
-	}
-	b := make([]byte, roomLen)
-
-	_, err = f.Read(b)
-	db.fileMutex.Unlock()
-	if err != nil {
-		return err
-	}
-
-	type jsonRoom struct {
-		Name        string
-		Description string
-		Exits       map[string]string
-	}
+  b, err := loadBytes(path)
+  if err != nil { return err }
 
 	if len(b) > 0 {
-		newRoom := jsonRoom{}
+		newRoom := struct{
+      Name        string
+      Description string
+      Exits       map[string]string
+    }{}
 		err = json.Unmarshal(b, &newRoom)
-		if err != nil {
-			return err
-		}
+		if err != nil { return err }
+
 		id := path[strings.LastIndex(path, "/")+1:]
 		db.memory[id] = &room{
 			name:        newRoom.Name,

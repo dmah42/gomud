@@ -2,7 +2,6 @@ package mudlib
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -61,38 +60,12 @@ func getConnected() []string {
 }
 
 func (p *player) load(path string) error {
-	// TODO: move this chunk to util to read bytes from file
-	f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	playerLen, err := f.Seek(0, 2)
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Seek(0, 0)
-	if err != nil {
-		return err
-	}
-
-	b := make([]byte, playerLen)
-
-	if len(b) == 0 {
-		return errors.New("Empty file")
-	}
-
-	_, err = f.Read(b)
-	if err != nil {
-		return err
-	}
+  b, err := loadBytes(path)
+  if err != nil { return err }
 
 	newPlayer := jsonPlayer{}
 	err = json.Unmarshal(b, &newPlayer)
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 
 	p.nickname = newPlayer.Nickname
 	p.realname = newPlayer.Realname

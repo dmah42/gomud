@@ -20,6 +20,8 @@ const ( // message types
 	messageTypeJoin
 	messageTypeQuit
 	messageTypeWho
+  messageTypeEnterRoom
+  messageTypeLeaveRoom
 )
 
 type message struct {
@@ -29,13 +31,14 @@ type message struct {
 	messageType messageType
 }
 
+// TODO: client should only hold the nick of the player
 type client struct {
 	conn   net.Conn
 	player *player
 	ch     chan message
 }
 
-func (c client) readLinesInto(ch chan<- message) {
+func (c client) readLines() {
 	bufc := bufio.NewReader(c.conn)
 	for {
 		line, err := bufc.ReadString('\n')
@@ -49,7 +52,7 @@ func (c client) readLinesInto(ch chan<- message) {
 		log.Printf("%q gave command %q.\n", c.player.Nickname, line)
 
 		parts := strings.Fields(line)
-		if err := doCommand(c, ch, parts[0], parts[1:]); err != nil {
+		if err := doCommand(c, parts[0], parts[1:]); err != nil {
 			log.Printf("%+v doing command %q\n", err, line)
 		}
 	}
@@ -109,6 +112,14 @@ func (c client) writeLinesFrom(ch <-chan message) {
 					toPrint = setFgBold(colorRed, fmt.Sprintf("%s has joined.", from))
 				}
 			}
+    case messageTypeEnterRoom:
+      if sameRoom(c, msg) && msg.from != c {
+        toPrint = setFg(colorCyan, fmt.Sprintf("%s enters.", from))
+      }
+    case messageTypeLeaveRoom:
+      if c.player.Room == msg.message && msg.from != c {
+        toPrint = setFg(colorCyan, fmt.Sprintf("%s leaves.", from))
+      }
 		default:
 			log.Printf("Unhandled message type: %+v", msg)
 			continue

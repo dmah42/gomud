@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+var msgchan = make(chan message)
+
 // Run listens for connections and handles player interaction.
 func Run(port int) error {
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
@@ -17,11 +19,10 @@ func Run(port int) error {
 		return err
 	}
 
-	msgchan := make(chan message)
 	addchan := make(chan client)
 	rmchan := make(chan client)
 
-	go handleMessages(msgchan, addchan, rmchan)
+	go handleMessages(addchan, rmchan)
 
 	log.Printf("Listening on " + strconv.Itoa(port))
 
@@ -31,11 +32,11 @@ func Run(port int) error {
 			fmt.Println(err)
 			continue
 		}
-		go handleConnection(conn, msgchan, addchan, rmchan)
+		go handleConnection(conn, addchan, rmchan)
 	}
 }
 
-func handleConnection(c net.Conn, msgchan chan<- message, addchan chan<- client, rmchan chan<- client) {
+func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 	bufc := bufio.NewReader(c)
 	defer c.Close()
 
@@ -53,9 +54,6 @@ func handleConnection(c net.Conn, msgchan chan<- message, addchan chan<- client,
 		message:     "",
 		messageType: messageTypeJoin,
 	}
-
-	newClient.player.connect()
-
 	defer func() {
 		msgchan <- message{
 			from:        newClient,
@@ -67,11 +65,35 @@ func handleConnection(c net.Conn, msgchan chan<- message, addchan chan<- client,
 		rmchan <- newClient
 	}()
 
-	go newClient.readLinesInto(msgchan)
+
+	newClient.player.connect()
+
+  // Add player to room
+  // TODO: should this be a method on room?
+  room, err := rooms.get(newClient.player.Room)
+  if err != nil {
+    log.Printf("User %q is starting in unknown room %q\n", newClient.player.Nickname, newClient.player.Room)
+    // TODO: handle limbo
+    return
+  }
+  room.addPlayer(newClient.player.Nickname)
+  msgchan <- message{
+    from: newClient,
+    message: newClient.player.Room,
+    messageType: messageTypeEnterRoom,
+  }
+
+  // Startup commands
+  // TODO: allow player to set these
+  if err := doCommand(newClient, "/look", []string{}); err != nil {
+    log.Printf("Failed to 'look' on startup\n")
+  }
+
+	go newClient.readLines()
 	newClient.writeLinesFrom(newClient.ch)
 }
 
-func handleMessages(msgchan <-chan message, addchan <-chan client, rmchan <-chan client) {
+func handleMessages(addchan <-chan client, rmchan <-chan client) {
 	clients := make(map[net.Conn]chan<- message)
 	for {
 		select {
@@ -105,7 +127,6 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 		player, err := players.get(nick)
 		if err == nil {
 			io.WriteString(c, setFgBold(colorGreen, fmt.Sprintf("Welcome back, %s!\n", nick)))
-			// TODO: startup commands
 			log.Printf("Player %+v logged in.\n", player)
 			return player
 		}

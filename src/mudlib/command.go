@@ -124,7 +124,7 @@ func init() {
 			case 0:
 				// room look
 				if room, err := rooms.get(cl.player.Room); err == nil {
-					desc := room.describe()
+					desc := room.describe(*cl.player)
 					return &desc, nil
 				}
 				// TODO: handle limbo
@@ -164,6 +164,41 @@ func init() {
 			return nil, nil
 		},
 	}
+  commands["go"] = command{
+    minArgs: 1,
+    maxArgs: 1,
+    usage: []string{"<direction>"},
+    do: func(cl client, args[]string) (*string, *message) {
+      room, err := rooms.get(cl.player.Room)
+      if err != nil {
+        log.Printf("Player is in non-existant room %q\n", cl.player.Room)
+        return nil, nil
+      }
+      newRoomName := room.exits[args[0]]
+      newRoom, err := rooms.get(newRoomName)
+      if err != nil {
+        ret := fmt.Sprintf("Unknown direction %q, %q.\n", args[0], newRoomName)
+        return &ret, nil
+      }
+      if err := room.removePlayer(cl.player.Nickname); err != nil {
+        log.Printf("%+v", err)
+      }
+      msgchan <- message{
+        from: cl,
+        message: cl.player.Room,
+        messageType: messageTypeLeaveRoom,
+      }
+      cl.player.Room = newRoomName
+      newRoom.addPlayer(cl.player.Nickname)
+      msgchan <- message{
+        from: cl,
+        message: cl.player.Room,
+        messageType: messageTypeEnterRoom,
+      }
+      ret := setFg(colorCyan, fmt.Sprintf("You go %s.\n", args[0]))
+      return &ret, nil
+    },
+  }
 }
 
 func (c command) printUsage(cmd string) string {
@@ -174,7 +209,7 @@ func (c command) printUsage(cmd string) string {
 	return usage
 }
 
-func doCommand(cl client, ch chan<- message, cmd string, args []string) error {
+func doCommand(cl client, cmd string, args []string) error {
 	if c, ok := commands[cmd[1:]]; ok {
 		if (c.minArgs != -1 && len(args) < c.minArgs) || (c.maxArgs != -1 && len(args) > c.maxArgs) {
 			io.WriteString(cl.conn, c.printUsage(cmd))
@@ -186,7 +221,7 @@ func doCommand(cl client, ch chan<- message, cmd string, args []string) error {
 		}
 		if msg != nil {
 			msg.from = cl
-			ch <- *msg
+			msgchan <- *msg
 		}
 		return nil
 	}

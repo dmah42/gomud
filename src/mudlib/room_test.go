@@ -1,26 +1,58 @@
 package mudlib
 
 import (
+  "reflect"
 	"testing"
 )
+
+func TestRoomExitDirs(t *testing.T) {
+  cases := []struct {
+    r room
+    wantExits []string
+  }{
+    {
+      r: room{name: "r", description: "room", exits: map[string]string{"up": "up"}},
+      wantExits: []string{"up"},
+    },
+    {
+      r: room{name: "r2", description: "room2", exits: map[string]string{}},
+      wantExits: []string{},
+    },
+  }
+
+  for _, tt := range cases {
+    gotExits := tt.r.exitDirs()
+    if !reflect.DeepEqual(gotExits, tt.wantExits) {
+      t.Errorf("want %q, got %q", tt.wantExits, gotExits)
+    }
+  }
+}
 
 func TestRoomDescribe(t *testing.T) {
 	cases := []struct {
 		r    room
+    p   player
 		wantDescription string
 	}{
 		{
-			r:    room{name: "room", description: "a room", exitIds: []string{"a", "b"}, playerNicks: []string{}},
+			r:    room{name: "room", description: "a room", exits: map[string]string{"a":"a", "b":"b"}, playerNicks: []string{}},
+      p: player{},
       wantDescription: "room\na room\nExits: a, b\n",
 		},
 		{
-			r:    room{name: "room2", description: "another room", exitIds: []string{}, playerNicks: []string{"a", "b"},},
+			r:    room{name: "room2", description: "another room", exits: map[string]string{}, playerNicks: []string{"a", "b"},},
+      p:  player{Nickname: "b"},
+      wantDescription: "room2\nanother room\na is here.\n",
+		},
+		{
+			r:    room{name: "room2", description: "another room", exits: map[string]string{}, playerNicks: []string{"a", "b"},},
+      p:  player{Nickname: "c"},
       wantDescription: "room2\nanother room\na, b are here.\n",
 		},
 	}
 
 	for _, tt := range cases {
-		gotDescription := tt.r.describe()
+		gotDescription := tt.r.describe(tt.p)
 		if gotDescription != tt.wantDescription {
 			t.Errorf("want %q, got %q", tt.wantDescription, gotDescription)
 		}
@@ -28,9 +60,44 @@ func TestRoomDescribe(t *testing.T) {
 }
 
 func TestRoomAddPlayer(t *testing.T) {
-// TODO
+  cases := []struct {
+    r room
+    p string
+    wantPlayers []string
+  }{
+    { r: room{playerNicks: []string{}}, p: "bob", wantPlayers: []string{"bob"}, },
+    { r: room{playerNicks: []string{"alice"}}, p: "bob", wantPlayers: []string{"alice", "bob"}, },
+  }
+
+  for _, tt := range cases {
+    tt.r.addPlayer(tt.p)
+    if (!reflect.DeepEqual(tt.r.playerNicks, tt.wantPlayers)) {
+      t.Errorf("want %v, got %v", tt.wantPlayers, tt.r.playerNicks)
+    }
+  }
 }
 
 func TestRoomRemovePlayer(t *testing.T) {
-// TODO
+  cases := []struct {
+    r room
+    p string
+    wantPlayers []string
+    wantError bool
+  }{
+    { r: room{playerNicks: []string{"alice"}}, p: "bob", wantPlayers: []string{"alice"}, wantError: true},
+    { r: room{playerNicks: []string{"alice", "bob"}}, p: "bob", wantPlayers: []string{"alice"}, wantError: false},
+  }
+
+  for _, tt := range cases {
+    gotError := tt.r.removePlayer(tt.p)
+    if tt.wantError && gotError == nil {
+      t.Errorf("want error, got no error\n")
+    }
+    if !tt.wantError && gotError != nil {
+      t.Errorf("want no error, got error %+v\n", gotError)
+    }
+    if (!reflect.DeepEqual(tt.r.playerNicks, tt.wantPlayers)) {
+      t.Errorf("want %v, got %v", tt.wantPlayers, tt.r.playerNicks)
+    }
+  }
 }

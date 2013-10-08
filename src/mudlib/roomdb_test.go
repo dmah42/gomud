@@ -4,11 +4,18 @@ import (
 	"testing"
 )
 
-func TestRoomDbAdd(t *testing.T) {
-// TODO
-}
-
 func TestRoomDbGet(t *testing.T) {
-// TODO
+  LoadRoomDb("testdata/rooms/", "start")
+  r, err := rooms.get("start")
+  if err != nil {
+    t.Errorf("%+v", err)
+  }
+  r2, err := rooms.get("start")
+  if err != nil {
+    t.Errorf("%+v", err)
+  }
+  if r != r2 {
+    t.Errorf("Mismatch pointers %p vs %p", r, r2)
+  }
 }
 

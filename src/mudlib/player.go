@@ -25,6 +25,7 @@ func (p *player) connect() {
 		log.Fatalf("User %q is connecting without disconnecting\n", p.Nickname)
 	}
 	connected = append(connected, p.Nickname)
+
 }
 
 func (p *player) disconnect() {

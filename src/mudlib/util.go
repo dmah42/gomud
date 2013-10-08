@@ -1,7 +1,7 @@
 package mudlib
 
 import (
-  "fmt"
+	"fmt"
 )
 
 func removeStringFromList(s string, list *[]string) error {

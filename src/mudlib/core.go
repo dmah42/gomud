@@ -46,7 +46,7 @@ func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 		ch:     make(chan message),
 	}
 	if newClient.player == nil {
-    io.WriteString(c, "Goodbye.")
+		io.WriteString(c, "Goodbye.")
 		return
 	}
 	addchan <- newClient
@@ -66,29 +66,28 @@ func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 		rmchan <- newClient
 	}()
 
-
 	newClient.player.connect()
 
-  // Add player to room
-  // TODO: should this be a method on room?
-  room, err := rooms.get(newClient.player.Room)
-  if err != nil {
-    log.Printf("User %q is starting in unknown room %q\n", newClient.player.Nickname, newClient.player.Room)
-    // TODO: handle limbo
-    return
-  }
-  room.addPlayer(newClient.player.Nickname)
-  msgchan <- message{
-    from: newClient,
-    message: newClient.player.Room,
-    messageType: messageTypeEnterRoom,
-  }
+	// Add player to room
+	// TODO: should this be a method on room?
+	room, err := rooms.get(newClient.player.Room)
+	if err != nil {
+		log.Printf("User %q is starting in unknown room %q\n", newClient.player.Nickname, newClient.player.Room)
+		// TODO: handle limbo
+		return
+	}
+	room.addPlayer(newClient.player.Nickname)
+	msgchan <- message{
+		from:        newClient,
+		message:     newClient.player.Room,
+		messageType: messageTypeEnterRoom,
+	}
 
-  // Startup commands
-  // TODO: allow player to set these
-  if err := doCommand(newClient, "/look", []string{}); err != nil {
-    log.Printf("Failed to 'look' on startup\n")
-  }
+	// Startup commands
+	// TODO: allow player to set these
+	if err := doCommand(newClient, "/look", []string{}); err != nil {
+		log.Printf("Failed to 'look' on startup\n")
+	}
 
 	go newClient.readLines()
 	newClient.writeLinesFrom(newClient.ch)
@@ -126,12 +125,12 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 		// Check for existing player.
 		player, err := players.get(nick)
 		if err == nil {
-		  // check if user is already logged in
-      if con, _ := player.isConnected(); con {
-        io.WriteString(c, setFgBold(colorRed, fmt.Sprintf("%s is already connected. Please try again.\n", nick)))
-			  errorCount++
-        continue
-      }
+			// check if user is already logged in
+			if con, _ := player.isConnected(); con {
+				io.WriteString(c, setFgBold(colorRed, fmt.Sprintf("%s is already connected. Please try again.\n", nick)))
+				errorCount++
+				continue
+			}
 
 			io.WriteString(c, setFgBold(colorGreen, fmt.Sprintf("Welcome back, %s!\n", nick)))
 			log.Printf("Player %+v logged in.\n", player)
@@ -148,8 +147,8 @@ func promptNick(c net.Conn, bufc *bufio.Reader) *player {
 			player.Room = startRoomId
 			return player
 		}
-    log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
-    errorCount++
+		log.Printf("Error creating new player %s %s: %+v\n", nick, realname, err)
+		errorCount++
 	}
 	return nil
 }

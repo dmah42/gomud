@@ -8,16 +8,16 @@ import (
 type room struct {
 	name        string
 	description string
-	exits     map[string]string
+	exits       map[string]string
 	playerNicks []string
 }
 
 func (r room) exitDirs() []string {
-  dirs := []string{}
-  for k, _ := range r.exits {
-    dirs = append(dirs, k)
-  }
-  return dirs
+	dirs := []string{}
+	for k, _ := range r.exits {
+		dirs = append(dirs, k)
+	}
+	return dirs
 }
 
 func (r room) describe(p player) string {
@@ -25,11 +25,11 @@ func (r room) describe(p player) string {
 	if len(r.exitDirs()) != 0 {
 		str = str + fmt.Sprintf("Exits: %s\n", strings.Join(r.exitDirs(), ", "))
 	}
-  playerList := r.playerNicks
-  removeStringFromList(p.Nickname, &playerList)
+	playerList := r.playerNicks
+	removeStringFromList(p.Nickname, &playerList)
 	if len(playerList) == 1 {
 		str = str + fmt.Sprintf("%s is here.\n", playerList[0])
-  } else if len(playerList) > 1 {
+	} else if len(playerList) > 1 {
 		str = str + fmt.Sprintf("%s are here.\n", strings.Join(playerList, ", "))
 	}
 	return str
@@ -40,5 +40,5 @@ func (r *room) addPlayer(p string) {
 }
 
 func (r *room) removePlayer(p string) error {
-  return removeStringFromList(p, &r.playerNicks)
+	return removeStringFromList(p, &r.playerNicks)
 }

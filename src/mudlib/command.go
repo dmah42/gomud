@@ -91,8 +91,8 @@ func init() {
 		maxArgs: 0,
 		usage:   []string{""},
 		do: func(cl client, args []string) (*string, *message) {
-      connected := getConnected()
-      ret := fmt.Sprintf("There are currently %d players connected:\n  %s\n", len(connected), strings.Join(getConnected(), ", "))
+			connected := getConnected()
+			ret := fmt.Sprintf("There are currently %d players connected:\n  %s\n", len(connected), strings.Join(getConnected(), ", "))
 			return &ret, nil
 		},
 	}
@@ -164,41 +164,41 @@ func init() {
 			return nil, nil
 		},
 	}
-  commands["go"] = command{
-    minArgs: 1,
-    maxArgs: 1,
-    usage: []string{"<direction>"},
-    do: func(cl client, args[]string) (*string, *message) {
-      room, err := rooms.get(cl.player.Room)
-      if err != nil {
-        log.Printf("Player is in non-existant room %q\n", cl.player.Room)
-        return nil, nil
-      }
-      newRoomName := room.exits[args[0]]
-      newRoom, err := rooms.get(newRoomName)
-      if err != nil {
-        ret := fmt.Sprintf("Unknown direction %q, %q.\n", args[0], newRoomName)
-        return &ret, nil
-      }
-      if err := room.removePlayer(cl.player.Nickname); err != nil {
-        log.Printf("%+v", err)
-      }
-      msgchan <- message{
-        from: cl,
-        message: cl.player.Room,
-        messageType: messageTypeLeaveRoom,
-      }
-      cl.player.Room = newRoomName
-      newRoom.addPlayer(cl.player.Nickname)
-      msgchan <- message{
-        from: cl,
-        message: cl.player.Room,
-        messageType: messageTypeEnterRoom,
-      }
-      ret := setFg(colorCyan, fmt.Sprintf("You go %s.\n", args[0]))
-      return &ret, nil
-    },
-  }
+	commands["go"] = command{
+		minArgs: 1,
+		maxArgs: 1,
+		usage:   []string{"<direction>"},
+		do: func(cl client, args []string) (*string, *message) {
+			room, err := rooms.get(cl.player.Room)
+			if err != nil {
+				log.Printf("Player is in non-existant room %q\n", cl.player.Room)
+				return nil, nil
+			}
+			newRoomName := room.exits[args[0]]
+			newRoom, err := rooms.get(newRoomName)
+			if err != nil {
+				ret := fmt.Sprintf("Unknown direction %q, %q.\n", args[0], newRoomName)
+				return &ret, nil
+			}
+			if err := room.removePlayer(cl.player.Nickname); err != nil {
+				log.Printf("%+v", err)
+			}
+			msgchan <- message{
+				from:        cl,
+				message:     cl.player.Room,
+				messageType: messageTypeLeaveRoom,
+			}
+			cl.player.Room = newRoomName
+			newRoom.addPlayer(cl.player.Nickname)
+			msgchan <- message{
+				from:        cl,
+				message:     cl.player.Room,
+				messageType: messageTypeEnterRoom,
+			}
+			ret := setFg(colorCyan, fmt.Sprintf("You go %s.\n", args[0]))
+			return &ret, nil
+		},
+	}
 }
 
 func (c command) printUsage(cmd string) string {

@@ -1,7 +1,7 @@
 package mudlib
 
 import (
-  "reflect"
+	"reflect"
 	"testing"
 )
 
@@ -62,7 +62,7 @@ func TestPlayerIsConnected(t *testing.T) {
 			t.Errorf("wantConnect %v, gotConnect %v, wantIndex %v, gotIndex %v", tt.wantConnect, gotConnect, tt.wantIndex, gotIndex)
 		}
 	}
-  connected = make([]string, 0)
+	connected = make([]string, 0)
 }
 
 func TestPlayerConnect(t *testing.T) {
@@ -91,25 +91,25 @@ func TestPlayerConnect(t *testing.T) {
 			t.Errorf("wantConnect %v, gotConnect %v", tt.wantConnect, gotConnect)
 		}
 	}
-  connected = make([]string, 0)
+	connected = make([]string, 0)
 }
 
 func TestPlayerDisconnect(t *testing.T) {
 	cases := []struct {
-		p           player
+		p              player
 		wantDisconnect bool
 	}{
 		{
-			p:           player{Nickname: "a", Realname: "alice", Room: "aviary"},
+			p:              player{Nickname: "a", Realname: "alice", Room: "aviary"},
 			wantDisconnect: true,
 		},
 		{
-			p:           player{Nickname: "b", Realname: "bob", Room: "beehive"},
+			p:              player{Nickname: "b", Realname: "bob", Room: "beehive"},
 			wantDisconnect: false,
 		},
 	}
 	for _, tt := range cases {
-    tt.p.connect()
+		tt.p.connect()
 		if tt.wantDisconnect {
 			tt.p.disconnect()
 		}
@@ -121,31 +121,31 @@ func TestPlayerDisconnect(t *testing.T) {
 			t.Errorf("wantDisconnect %v, gotDisconnect %v", tt.wantDisconnect, !gotConnect)
 		}
 	}
-  connected = make([]string, 0)
+	connected = make([]string, 0)
 }
 
 func TestPlayerGetConnected(t *testing.T) {
 	cases := []struct {
-		p           []player
+		p                []player
 		wantGetConnected []string
 	}{
 		{
-			p: []player {
-        player{Nickname: "b", Realname: "bob", Room: "beehive"},
-			  player{Nickname: "a", Realname: "alice", Room: "aviary"},
-			  player{Nickname: "c", Realname: "charles", Room: "chapel"},
-      },
-			wantGetConnected: []string{ "a", "b", "c", },
+			p: []player{
+				player{Nickname: "b", Realname: "bob", Room: "beehive"},
+				player{Nickname: "a", Realname: "alice", Room: "aviary"},
+				player{Nickname: "c", Realname: "charles", Room: "chapel"},
+			},
+			wantGetConnected: []string{"a", "b", "c"},
 		},
 	}
 	for _, tt := range cases {
-    for _, p := range tt.p {
-      p.connect()
+		for _, p := range tt.p {
+			p.connect()
 		}
-    gotGetConnected := getConnected()
-    if !reflect.DeepEqual(gotGetConnected, tt.wantGetConnected) {
-      t.Errorf("wantGetConnected %q, gotGetConnected %q", tt.wantGetConnected, gotGetConnected)
-    }
+		gotGetConnected := getConnected()
+		if !reflect.DeepEqual(gotGetConnected, tt.wantGetConnected) {
+			t.Errorf("wantGetConnected %q, gotGetConnected %q", tt.wantGetConnected, gotGetConnected)
+		}
 	}
-  connected = make([]string, 0)
+	connected = make([]string, 0)
 }

@@ -25,14 +25,14 @@ func init() {
 // LoadRoomDb loads the room database from the given directory and sets the starting room for new players.
 func LoadRoomDb(roomDir, startId string) error {
 	startRoomId = startId
-  wd, _ := os.Getwd()
-  log.Printf("Loading rooms from %s/%s\n", wd, roomDir)
+	wd, _ := os.Getwd()
+	log.Printf("Loading rooms from %s/%s\n", wd, roomDir)
 	return filepath.Walk(roomDir, func(path string, fi os.FileInfo, err error) error {
-    if err != nil {
-      return err
-    }
-    return rooms.add(path, fi)
-  })
+		if err != nil {
+			return err
+		}
+		return rooms.add(path, fi)
+	})
 }
 
 func (db roomDb) get(id string) (*room, error) {
@@ -74,7 +74,7 @@ func (db *roomDb) add(path string, fi os.FileInfo) error {
 	type jsonRoom struct {
 		Name        string
 		Description string
-		Exits     map[string]string
+		Exits       map[string]string
 	}
 
 	if len(b) > 0 {
@@ -88,7 +88,7 @@ func (db *roomDb) add(path string, fi os.FileInfo) error {
 			name:        newRoom.Name,
 			description: newRoom.Description,
 			exits:       newRoom.Exits,
-      playerNicks: make([]string, 0),
+			playerNicks: make([]string, 0),
 		}
 		log.Printf("Loaded room %q from %q.\n", id, path)
 	}

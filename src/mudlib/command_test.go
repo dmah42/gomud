@@ -1,17 +1,17 @@
 package mudlib
 
 import (
-  "testing"
+	"testing"
 )
 
 func TestCommandAddCommand(t *testing.T) {
-// TODO
+	// TODO
 }
 
 func TestCommandHelp(t *testing.T) {
-// TODO
+	// TODO
 }
 
 func TestCommandPrintUsage(t *testing.T) {
-// TODO
+	// TODO
 }

@@ -20,8 +20,8 @@ const ( // message types
 	messageTypeJoin
 	messageTypeQuit
 	messageTypeWho
-  messageTypeEnterRoom
-  messageTypeLeaveRoom
+	messageTypeEnterRoom
+	messageTypeLeaveRoom
 )
 
 type message struct {
@@ -112,14 +112,14 @@ func (c client) writeLinesFrom(ch <-chan message) {
 					toPrint = setFgBold(colorRed, fmt.Sprintf("%s has joined.", from))
 				}
 			}
-    case messageTypeEnterRoom:
-      if sameRoom(c, msg) && msg.from != c {
-        toPrint = setFg(colorCyan, fmt.Sprintf("%s enters.", from))
-      }
-    case messageTypeLeaveRoom:
-      if c.player.Room == msg.message && msg.from != c {
-        toPrint = setFg(colorCyan, fmt.Sprintf("%s leaves.", from))
-      }
+		case messageTypeEnterRoom:
+			if sameRoom(c, msg) && msg.from != c {
+				toPrint = setFg(colorCyan, fmt.Sprintf("%s enters.", from))
+			}
+		case messageTypeLeaveRoom:
+			if c.player.Room == msg.message && msg.from != c {
+				toPrint = setFg(colorCyan, fmt.Sprintf("%s leaves.", from))
+			}
 		default:
 			log.Printf("Unhandled message type: %+v", msg)
 			continue

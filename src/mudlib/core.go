@@ -48,6 +48,7 @@ func Run(configFile string) error {
 		}
 		go handleConnection(conn, addchan, rmchan)
 	}
+        return nil
 }
 
 func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {

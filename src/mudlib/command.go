@@ -139,6 +139,7 @@ func init() {
 				// TODO: look at objects/players
 				return nil, nil
 			}
+                        return nil, nil
 		},
 	}
 	commands["help"] = command{

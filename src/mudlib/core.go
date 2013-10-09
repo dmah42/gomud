@@ -2,6 +2,7 @@ package mudlib
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -11,20 +12,33 @@ import (
 
 var msgchan = make(chan message)
 
+var config = &struct {
+	Port        int
+	LoginPrompt string
+}{}
+
 // Run listens for connections and handles player interaction.
-func Run(port int) error {
-	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+func Run(configFile string) error {
+	b, err := loadBytes(configFile)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
+
+	err = json.Unmarshal(b, config)
+	if err != nil {
+		return err
+	}
+
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(config.Port))
+	if err != nil {
+		return err
+	}
+	log.Printf("Listening on " + strconv.Itoa(config.Port))
 
 	addchan := make(chan client)
 	rmchan := make(chan client)
 
 	go handleMessages(addchan, rmchan)
-
-	log.Printf("Listening on " + strconv.Itoa(port))
 
 	for {
 		conn, err := ln.Accept()
@@ -125,7 +139,7 @@ func handleMessages(addchan <-chan client, rmchan <-chan client) {
 
 func promptNick(c net.Conn, bufc *bufio.Reader) (nick *string) {
 	// TODO: custom prompts
-	io.WriteString(c, setFgBold(colorMagenta, "Welcome... to the real world")+"\n")
+	io.WriteString(c, setFgBold(colorMagenta, config.LoginPrompt)+"\n")
 	errorCount := 0
 	var realname string
 	nick = new(string)
@@ -150,7 +164,7 @@ func promptNick(c net.Conn, bufc *bufio.Reader) (nick *string) {
 		}
 		// Not found so create a new one.
 		log.Printf("Creating new player: %s\n", *nick)
-		io.WriteString(c, "You must be new here. What is your real name? ")
+		io.WriteString(c, "You seem to be new here. What is your real name? ")
 		realnameBytes, _, _ := bufc.ReadLine()
 		realname = string(realnameBytes)
 		log.Printf("Adding real name %s for %s\n", realname, *nick)

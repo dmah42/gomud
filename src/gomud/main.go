@@ -2,17 +2,15 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"mudlib"
 	"os"
 )
 
-var port = flag.Int("port", 4242, "port to listen on")
-
 const (
 	playerDir   = "players/"
 	roomDir     = "rooms/"
+	configFile  = "config"
 	startRoomId = "start"
 )
 
@@ -27,7 +25,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := mudlib.Run(*port); err != nil {
+	if err := mudlib.Run(configFile); err != nil {
+		fmt.Printf("Failed to run: %+v\n", err)
 		os.Exit(1)
 	}
 }

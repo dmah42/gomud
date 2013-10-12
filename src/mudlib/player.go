@@ -35,7 +35,7 @@ func (p *player) finger() string {
 
 func (p *player) connect() {
 	if c, _ := p.isConnected(); c {
-		log.Fatalf("User %q is connecting without disconnecting\n", p.nickname)
+		errorLog.Fatalf("User %q is connecting without disconnecting\n", p.nickname)
 	}
 	connected = append(connected, p.nickname)
 }
@@ -45,7 +45,7 @@ func (p *player) disconnect() {
 		connected = append(connected[:index], connected[index+1:]...)
 		return
 	}
-	log.Fatalf("User %q is disconnecting without connecting\n", p.nickname)
+	errorLog.Fatalf("User %q is disconnecting without connecting\n", p.nickname)
 }
 
 func (p *player) isConnected() (bool, int) {
@@ -82,7 +82,7 @@ func (p player) save() {
 	}
 	b, err := json.Marshal(jp)
 	if err != nil {
-		log.Printf("Warning: Failed to save player db: %+v\n", err)
+		errorLog.Printf("Warning: Failed to save player db: %+v\n", err)
 		return
 	}
 	p.fileMutex.Lock()
@@ -90,13 +90,13 @@ func (p player) save() {
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		p.fileMutex.Unlock()
-		log.Printf("Warning: Failed to save player db: %+v\n", err)
+		errorLog.Printf("Warning: Failed to save player db: %+v\n", err)
 		return
 	}
 	_, err = f.Write(b)
 	if err != nil {
 		p.fileMutex.Unlock()
-		log.Printf("Warning: Failed to save player db: %+v\n", err)
+		errorLog.Printf("Warning: Failed to save player db: %+v\n", err)
 		return
 	}
 	p.fileMutex.Unlock()

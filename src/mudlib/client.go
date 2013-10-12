@@ -35,6 +35,7 @@ type client struct {
 	conn   net.Conn
 	player string
 	ch     chan message
+  log    *log.Logger
 }
 
 func (c client) readLines() {
@@ -48,11 +49,11 @@ func (c client) readLines() {
 		if len(line) == 0 {
 			continue
 		}
-		log.Printf("%q gave command %q.\n", c.player, line)
+    c.log.Printf("command %q: %q.\n", c.player, line)
 
 		parts := strings.Fields(line)
 		if err := doCommand(c, parts[0], parts[1:]); err != nil {
-			log.Printf("%+v doing command %q\n", err, line)
+			c.log.Printf("%+v during command %q\n", err, line)
 		}
 	}
 }
@@ -60,12 +61,12 @@ func (c client) readLines() {
 func sameRoom(c client, msg message) bool {
 	player, err := players.get(c.player)
 	if err != nil {
-		log.Fatalf("%+v", err)
+		errorLog.Fatalf("%+v", err)
 		return false
 	}
 	fromPlayer, err := players.get(msg.from.player)
 	if err != nil {
-		log.Fatalf("%+v", err)
+		errorLog.Fatalf("%+v", err)
 		return false
 	}
 	return player.room == fromPlayer.room
@@ -128,14 +129,15 @@ func (c client) writeLinesFrom(ch <-chan message) {
 		case messageTypeLeaveRoom:
 			player, err := players.get(c.player)
 			if err != nil {
-				log.Fatalf("%+v", err)
+				errorLog.Fatalf("%+v", err)
 				continue
 			}
 			if player.room == msg.message && msg.from != c {
 				toPrint = setFg(colorCyan, fmt.Sprintf("%s leaves.", from))
 			}
 		default:
-			log.Printf("Unhandled message type: %+v", msg)
+			c.log.Printf("Unhandled message type: %+v", msg)
+			errorLog.Printf("Unhandled message type: %q %+v", c.player, msg)
 			continue
 		}
 		if len(toPrint) == 0 {
@@ -143,7 +145,7 @@ func (c client) writeLinesFrom(ch <-chan message) {
 		}
 		_, err := io.WriteString(c.conn, toPrint+"\n")
 		if err != nil {
-			log.Printf("Error writing '%q'\n", toPrint)
+			errorLog.Printf("Error writing '%q'\n", toPrint)
 		}
 	}
 }

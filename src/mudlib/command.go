@@ -3,7 +3,6 @@ package mudlib
 import (
 	"fmt"
 	"io"
-	"log"
 	"sort"
 	"strings"
 )
@@ -125,14 +124,14 @@ func init() {
 				// room look
 				player, err := players.get(cl.player)
 				if err != nil {
-					log.Fatalf("%+v", err)
+					errorLog.Fatalf("%+v", err)
 				}
 				if room, err := rooms.get(player.room); err == nil {
 					desc := room.describe(*player)
 					return &desc, nil
 				}
 				// TODO: handle limbo
-				log.Printf("%+v in limbo.\n", player)
+				errorLog.Printf("%+v in limbo.\n", player)
 				desc := "You're in limbo.\n"
 				return &desc, nil
 			default:
@@ -176,11 +175,11 @@ func init() {
 		do: func(cl client, args []string) (*string, *message) {
 			player, err := players.get(cl.player)
 			if err != nil {
-				log.Fatalf("%+v", err)
+				errorLog.Fatalf("%+v", err)
 			}
 			room, err := rooms.get(player.room)
 			if err != nil {
-				log.Printf("Player is in non-existant room %q\n", player.room)
+				errorLog.Printf("Player is in non-existant room %q\n", player.room)
 				return nil, nil
 			}
 			newRoomName := room.exits[args[0]]
@@ -190,7 +189,7 @@ func init() {
 				return &ret, nil
 			}
 			if err := room.removePlayer(cl.player); err != nil {
-				log.Printf("%+v", err)
+				errorLog.Printf("%+v", err)
 			}
 			msgchan <- message{
 				from:        cl,

@@ -37,17 +37,17 @@ func TestRoomDescribe(t *testing.T) {
 		{
 			r:               room{name: "room", description: "a room", exits: map[string]string{"a": "a", "b": "b"}, playerNicks: []string{}},
 			p:               player{},
-			wantDescription: "room\na room\nExits: a, b\n",
+			wantDescription: setFgBold(colorGreen, "room\n") + "a room\n" + setFg(colorYellow, "Exits: a, b\n"),
 		},
 		{
 			r:               room{name: "room2", description: "another room", exits: map[string]string{}, playerNicks: []string{"a", "b"}},
 			p:               player{nickname: "b"},
-			wantDescription: "room2\nanother room\na is here.\n",
+			wantDescription: setFgBold(colorGreen, "room2\n") + "another room\na is here.\n",
 		},
 		{
 			r:               room{name: "room2", description: "another room", exits: map[string]string{}, playerNicks: []string{"a", "b"}},
 			p:               player{nickname: "c"},
-			wantDescription: "room2\nanother room\na, b are here.\n",
+			wantDescription: setFgBold(colorGreen, "room2\n") + "another room\na, b are here.\n",
 		},
 	}
 

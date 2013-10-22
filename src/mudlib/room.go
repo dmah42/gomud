@@ -21,9 +21,11 @@ func (r room) exitDirs() []string {
 }
 
 func (r room) describe(p player) string {
-	str := fmt.Sprintf("%s\n%s\n", r.name, r.description)
+	str := setFgBold(colorGreen, fmt.Sprintf("%s\n", r.name))
+	str += fmt.Sprintf("%s\n", r.description)
 	if len(r.exitDirs()) != 0 {
-		str = str + fmt.Sprintf("Exits: %s\n", strings.Join(r.exitDirs(), ", "))
+		exits := strings.Join(r.exitDirs(), ", ")
+		str += setFg(colorYellow, fmt.Sprintf("Exits: %s\n", exits))
 	}
 	playerList := r.playerNicks
 	removeStringFromList(p.nickname, &playerList)

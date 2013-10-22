@@ -13,7 +13,7 @@ var rooms = roomDb{}
 var startRoomId string
 
 type roomDb struct {
-	memory    map[string]*room
+	memory map[string]*room
 }
 
 func init() {
@@ -45,17 +45,21 @@ func (db *roomDb) load(path string, fi os.FileInfo) error {
 		return nil
 	}
 
-  b, err := loadBytes(path)
-  if err != nil { return err }
+	b, err := loadBytes(path)
+	if err != nil {
+		return err
+	}
 
 	if len(b) > 0 {
-		newRoom := struct{
-      Name        string
-      Description string
-      Exits       map[string]string
-    }{}
+		newRoom := struct {
+			Name        string
+			Description string
+			Exits       map[string]string
+		}{}
 		err = json.Unmarshal(b, &newRoom)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		id := path[strings.LastIndex(path, "/")+1:]
 		db.memory[id] = &room{

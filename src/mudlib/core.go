@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
-  "os"
+	"os"
 	"strconv"
 )
 
@@ -24,13 +24,13 @@ var errorLogFile os.File
 var errorLog *log.Logger
 
 func init() {
-  os.MkdirAll("logs/", os.ModePerm)
-  errorLogFile, err := os.OpenFile("logs/error", os.O_WRONLY|os.O_CREATE, os.ModePerm)
-  if err != nil {
-    log.Printf("Failed to create error log: %+v", err)
-    return
-  }
-  errorLog = log.New(errorLogFile, "[error] ", logFlags)
+	os.MkdirAll("logs/", os.ModePerm)
+	errorLogFile, err := os.OpenFile("logs/error", os.O_WRONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		log.Printf("Failed to create error log: %+v", err)
+		return
+	}
+	errorLog = log.New(errorLogFile, "[error] ", logFlags)
 }
 
 // Run listens for connections and handles player interaction.
@@ -65,11 +65,11 @@ func Run(configFile string) error {
 		go handleConnection(conn, addchan, rmchan)
 	}
 
-  if err := errorLogFile.Close(); err != nil {
-    log.Printf("Failed to close error log: %+v", err)
-    return err
-  }
-  return nil
+	if err := errorLogFile.Close(); err != nil {
+		log.Printf("Failed to close error log: %+v", err)
+		return err
+	}
+	return nil
 }
 
 func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
@@ -81,19 +81,19 @@ func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 		io.WriteString(c, "Goodbye.")
 		return
 	}
-  os.MkdirAll("logs/player/", os.ModePerm)
-  logFile, err := os.OpenFile("logs/player/"+*nick, os.O_WRONLY|os.O_CREATE, os.ModePerm)
-  if err != nil {
-    io.WriteString(c, "Something went wrong.\n")
-    errorLog.Printf("Failed to create player log %q", logFile)
-    return
-  }
+	os.MkdirAll("logs/player/", os.ModePerm)
+	logFile, err := os.OpenFile("logs/player/"+*nick, os.O_WRONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		io.WriteString(c, "Something went wrong.\n")
+		errorLog.Printf("Failed to create player log %q", logFile)
+		return
+	}
 
 	newClient := client{
 		conn:   c,
 		player: *nick,
 		ch:     make(chan message),
-    log:    log.New(logFile, "["+*nick+"] ", logFlags),
+		log:    log.New(logFile, "["+*nick+"] ", logFlags),
 	}
 
 	addchan <- newClient
@@ -115,9 +115,9 @@ func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 		player.disconnect()
 		newClient.log.Printf("Connection from %v closed.\n", c.RemoteAddr())
 		rmchan <- newClient
-    if err := logFile.Close(); err != nil {
-      errorLog.Printf("Failed to close player logFile %q", newClient.player)
-    }
+		if err := logFile.Close(); err != nil {
+			errorLog.Printf("Failed to close player logFile %q", newClient.player)
+		}
 	}()
 
 	player, err := players.get(newClient.player)
@@ -127,18 +127,10 @@ func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {
 	player.connect()
 
 	// Add player to room
-	// TODO: should this be a method on room?
-	room, err := rooms.get(player.room)
-	if err != nil {
+	if err := player.toRoom(newClient, player.room); err != nil {
 		errorLog.Printf("User %q is starting in unknown room %q\n", player.nickname, player.room)
 		// TODO: handle limbo
 		return
-	}
-	room.addPlayer(player.nickname)
-	msgchan <- message{
-		from:        newClient,
-		message:     player.room,
-		messageType: messageTypeEnterRoom,
 	}
 
 	// Startup commands

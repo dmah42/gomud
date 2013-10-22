@@ -138,7 +138,7 @@ func init() {
 				// TODO: look at objects/players
 				return nil, nil
 			}
-                        return nil, nil
+			return nil, nil
 		},
 	}
 	commands["help"] = command{
@@ -179,32 +179,19 @@ func init() {
 			}
 			room, err := rooms.get(player.room)
 			if err != nil {
-				errorLog.Printf("Player is in non-existant room %q\n", player.room)
-				return nil, nil
-			}
-			newRoomName := room.exits[args[0]]
-			newRoom, err := rooms.get(newRoomName)
-			if err != nil {
-				ret := fmt.Sprintf("Unknown direction %q, %q.\n", args[0], newRoomName)
+				errorLog.Printf("Player %+v is in limbo.\n", player)
+				ret := fmt.Sprintf("You can't go %q: %+v\n", args[0], err)
 				return &ret, nil
 			}
-			if err := room.removePlayer(cl.player); err != nil {
-				errorLog.Printf("%+v", err)
-			}
-			msgchan <- message{
-				from:        cl,
-				message:     player.room,
-				messageType: messageTypeLeaveRoom,
-			}
-			player.room = newRoomName
-			newRoom.addPlayer(player.nickname)
-			msgchan <- message{
-				from:        cl,
-				message:     player.room,
-				messageType: messageTypeEnterRoom,
+			if err := player.toRoom(cl, room.exits[args[0]]); err != nil {
+				ret := fmt.Sprintf("You can't go %q: %+v\n", args[0], err)
+				return &ret, nil
 			}
 			ret := setFg(colorCyan, fmt.Sprintf("You go %s.\n", args[0]))
-			return &ret, nil
+			// Force a look on move.
+			lookRet, msg := commands["look"].do(cl, []string{})
+			ret += *lookRet
+			return &ret, msg
 		},
 	}
 }

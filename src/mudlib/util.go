@@ -2,7 +2,7 @@ package mudlib
 
 import (
 	"fmt"
-  "os"
+	"os"
 )
 
 func removeStringFromList(s string, list *[]string) error {
@@ -17,15 +17,23 @@ func removeStringFromList(s string, list *[]string) error {
 
 func loadBytes(file string) ([]byte, error) {
 	f, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	length, err := f.Seek(0, 2)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
-	if length == 0 { return nil, fmt.Errorf("Empty file: %s", file) }
+	if length == 0 {
+		return nil, fmt.Errorf("Empty file: %s", file)
+	}
 
 	_, err = f.Seek(0, 0)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	b := make([]byte, length)
 
@@ -34,5 +42,5 @@ func loadBytes(file string) ([]byte, error) {
 	}
 
 	_, err = f.Read(b)
-  return b, err
+	return b, err
 }

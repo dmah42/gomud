@@ -35,7 +35,7 @@ type client struct {
 	conn   net.Conn
 	player string
 	ch     chan message
-  log    *log.Logger
+	log    *log.Logger
 }
 
 func (c client) readLines() {
@@ -49,7 +49,7 @@ func (c client) readLines() {
 		if len(line) == 0 {
 			continue
 		}
-    c.log.Printf("command %q: %q.\n", c.player, line)
+		c.log.Printf("command %q: %q.\n", c.player, line)
 
 		parts := strings.Fields(line)
 		if err := doCommand(c, parts[0], parts[1:]); err != nil {

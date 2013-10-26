@@ -88,7 +88,7 @@ func (p player) save() {
 		return
 	}
 	p.fileMutex.Lock()
-	filename := players.dir + p.nickname
+	filename := players.dir + "/" + p.nickname
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		p.fileMutex.Unlock()

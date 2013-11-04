@@ -3,15 +3,85 @@ package mudlib
 import (
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"runtime"
 	"runtime/debug"
 )
 
-var httpPort = flag.Int("httpPort", 8080, "Port for HTTP interface")
+const (
+	gcTemplateContent =`
+<html>
+	<head><title>GC</title></head>
+	<body>
+		<h1>GC</h1>
+		<table>
+			<tr><th>Last GC</th><td>{{.LastGC}}</td></tr>
+			<tr><th>Num GC</th><td>{{.NumGC}}</td></tr>
+			<tr><th>Pause Total</th><td>{{.PauseTotal}}</td></tr>
+			<tr><th>Pause</th><td>{{.Pause}}</td></tr>
+			<tr><th>Pause Quantiles</th><td>{{.PauseQuantiles}}</td></tr>
+		</table>
+	</body>
+</html>`
+	memTemplateContent =`
+<html>
+	<head><title>Mem</title></head>
+	<body>
+		<h1>Mem</h1>
+		<h2>General</h2>
+		<table>
+			<tr><th>Alloc</th><td>{{.Alloc}}</td></tr>
+			<tr><th>Total alloc</th><td>{{.TotalAlloc}}</td></tr>
+			<tr><th>Sys</th><td>{{.Sys}}</td></tr>
+			<tr><th>Lookups</th><td>{{.Lookups}}</td></tr>
+			<tr><th>Mallocs</th><td>{{.Mallocs}}</td></tr>
+			<tr><th>Frees</th><td>{{.Frees}}</td></tr>
+		</table>
+
+		<h2>Heap</h2>
+		<table>
+			<tr><th>Alloc</th><td>{{.HeapAlloc}}</td></tr>
+			<tr><th>Sys</th><td>{{.HeapSys}}</td></tr>
+			<tr><th>Idle</th><td>{{.HeapIdle}}</td></tr>
+			<tr><th>Inuse</th><td>{{.HeapInuse}}</td></tr>
+			<tr><th>Released</th><td>{{.HeapReleased}}</td></tr>
+			<tr><th>Objects</th><td>{{.HeapObjects}}</td></tr>
+		</table>
+
+		<h2>Low-level</h2>
+		<table>
+			<tr><th>Stack Inuse</th><td>{{.StackInuse}}</td></tr>
+			<tr><th>Stack Sys</th><td>{{.StackSys}}</td></tr>
+			<tr><th>MSpan Inuse</th><td>{{.MSpanInuse}}</td></tr>
+			<tr><th>MSpan Sys</th><td>{{.MSpanSys}}</td></tr>
+			<tr><th>MCache Inuse</th><td>{{.MCacheInuse}}</td></tr>
+			<tr><th>MCache Sys</th><td>{{.MCacheSys}}</td></tr>
+			<tr><th>Bucket Hash Sys</th><td>{{.BuckHashSys}}</td></tr>
+		</table>
+		<h2>Per-size</h2>
+		<table>
+			<tr><th>Size</th><th>Mallocs</th><th>Frees</th></tr>
+			{{range .BySize}}
+				<tr><td>{{.Size}}</td><td>{{.Mallocs}}</td><td>{{.Frees}}</td></tr>
+			{{end}}
+		</table>
+	</body>
+</html>
+`
+)
+
+var (
+	httpPort = flag.Int("httpPort", 8080, "Port for HTTP interface")
+	gcTemplate = template.New("GC")
+	memTemplate = template.New("Mem")
+)
 
 func init() {
+	gcTemplate = template.Must(gcTemplate.Parse(gcTemplateContent))
+	memTemplate = template.Must(memTemplate.Parse(memTemplateContent))
+
 	http.HandleFunc("/gc", gcHandler)
 	http.HandleFunc("/mem", memHandler)
 	http.HandleFunc("/errors", errorHandler)
@@ -29,66 +99,19 @@ func startServing() {
 func gcHandler(w http.ResponseWriter, r *http.Request) {
 	gcStats := new(debug.GCStats)
 	debug.ReadGCStats(gcStats)
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintln(w, "<html><head><title>GC</title></head>")
-	fmt.Fprintln(w, "<body>")
-	fmt.Fprintln(w, "<h1>GC</h1>")
-	fmt.Fprintln(w, "<table>")
-	fmt.Fprintf(w, "<tr><th>Last GC</th><td>%v</td></tr>\n", gcStats.LastGC)
-	fmt.Fprintf(w, "<tr><th>Num GC</th><td>%v</td></tr>\n", gcStats.NumGC)
-	fmt.Fprintf(w, "<tr><th>Pause Total</th><td>%v</td></tr>\n", gcStats.PauseTotal)
-	fmt.Fprintf(w, "<tr><th>Pause</th><td>%v</td></tr>\n", gcStats.Pause)
-	fmt.Fprintf(w, "<tr><th>Pause Quantiles</th><td>%v</td></tr>\n", gcStats.PauseQuantiles)
-	fmt.Fprintln(w, "</table>")
-	fmt.Fprintln(w, "</body>")
-	fmt.Fprintln(w, "</html>")
+	if err := gcTemplate.Execute(w, *gcStats); err != nil {
+		errorLog.Printf("Failed to execute GC template: %+v", err)
+		w.WriteHeader(500)
+	}
 }
 
 func memHandler(w http.ResponseWriter, r *http.Request) {
 	memStats := new(runtime.MemStats)
 	runtime.ReadMemStats(memStats)
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintln(w, "<html><head><title>Mem</title></head>")
-	fmt.Fprintln(w, "<body>")
-	fmt.Fprintln(w, "<h1>Mem</h1>")
-	fmt.Fprintln(w, "<h2>General</h2>")
-	fmt.Fprintln(w, "<table>")
-	fmt.Fprintf(w, "<tr><th>Alloc</th><td>%v</td></tr>\n", memStats.Alloc)
-	fmt.Fprintf(w, "<tr><th>Total alloc</th><td>%v</td></tr>\n", memStats.TotalAlloc)
-	fmt.Fprintf(w, "<tr><th>Sys</th><td>%v</td></tr>\n", memStats.Sys)
-	fmt.Fprintf(w, "<tr><th>Lookups</th><td>%v</td></tr>\n", memStats.Lookups)
-	fmt.Fprintf(w, "<tr><th>Mallocs</th><td>%v</td></tr>\n", memStats.Mallocs)
-	fmt.Fprintf(w, "<tr><th>Frees</th><td>%v</td></tr>\n", memStats.Frees)
-	fmt.Fprintln(w, "</table>")
-	fmt.Fprintln(w, "<h2>Heap</h2>")
-	fmt.Fprintln(w, "<table>")
-	fmt.Fprintf(w, "<tr><th>Alloc</th><td>%v</td></tr>\n", memStats.HeapAlloc)
-	fmt.Fprintf(w, "<tr><th>Sys</th><td>%v</td></tr>\n", memStats.HeapSys)
-	fmt.Fprintf(w, "<tr><th>Idle</th><td>%v</td></tr>\n", memStats.HeapIdle)
-	fmt.Fprintf(w, "<tr><th>Inuse</th><td>%v</td></tr>\n", memStats.HeapInuse)
-	fmt.Fprintf(w, "<tr><th>Released</th><td>%v</td></tr>\n", memStats.HeapReleased)
-	fmt.Fprintf(w, "<tr><th>Objects</th><td>%v</td></tr>\n", memStats.HeapObjects)
-	fmt.Fprintln(w, "</table>")
-	fmt.Fprintln(w, "<h2>Low-level</h2>")
-	fmt.Fprintln(w, "<table>")
-	fmt.Fprintf(w, "<tr><th>Stack Inuse</th><td>%v</td></tr>\n", memStats.StackInuse)
-	fmt.Fprintf(w, "<tr><th>Stack Sys</th><td>%v</td></tr>\n", memStats.StackSys)
-	fmt.Fprintf(w, "<tr><th>MSpan Inuse</th><td>%v</td></tr>\n", memStats.MSpanInuse)
-	fmt.Fprintf(w, "<tr><th>MSpan Sys</th><td>%v</td></tr>\n", memStats.MSpanSys)
-	fmt.Fprintf(w, "<tr><th>MCache Inuse</th><td>%v</td></tr>\n", memStats.MCacheInuse)
-	fmt.Fprintf(w, "<tr><th>MCache Sys</th><td>%v</td></tr>\n", memStats.MCacheSys)
-	fmt.Fprintf(w, "<tr><th>Bucket Hash Sys</th><td>%v</td></tr>\n", memStats.BuckHashSys)
-	fmt.Fprintln(w, "</table>")
-	fmt.Fprintln(w, "<h2>Per-size</h2>")
-	fmt.Fprintln(w, "<table>")
-	fmt.Fprintln(w, "<tr><th>Size</th><th>Mallocs</th><th>Frees</th></tr>")
-	// TODO: histogram
-	for _, bs := range memStats.BySize {
-		fmt.Fprintf(w, "<tr><td>%v</td><td>%v</td><td>%v</td></tr>\n", bs.Size, bs.Mallocs, bs.Frees)
+	if err := memTemplate.Execute(w, *memStats); err != nil {
+		errorLog.Printf("Failed to execute Mem template: %+v", err)
+		w.WriteHeader(500)
 	}
-	fmt.Fprintln(w, "</table>")
-	fmt.Fprintln(w, "</body>")
-	fmt.Fprintln(w, "</html>")
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request) {

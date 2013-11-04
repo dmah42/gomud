@@ -8,7 +8,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"runtime"
+	"runtime/debug"
 	"strconv"
+	"time"
 )
 
 const logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
@@ -20,8 +23,8 @@ var config = &struct {
 	LoginPrompt string
 }{}
 
-var errorLogFile os.File
-var errorLog *log.Logger
+var errorLogFile, statsLogFile os.File
+var errorLog, statsLog *log.Logger
 
 func init() {
 	os.MkdirAll("logs/", os.ModePerm)
@@ -31,6 +34,16 @@ func init() {
 		return
 	}
 	errorLog = log.New(errorLogFile, "[error] ", logFlags)
+
+	statsLogFile, err := os.OpenFile("logs/stats", os.O_WRONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		log.Printf("Failed to create stats log: %+v", err)
+		return
+	}
+	statsLog = log.New(statsLogFile, "[stats] ", logFlags)
+
+	c := time.Tick(1 * time.Minute)
+	go writeStats(c)
 }
 
 // Run listens for connections and handles player interaction.
@@ -69,7 +82,20 @@ func Run(configFile string) error {
 		log.Printf("Failed to close error log: %+v", err)
 		return err
 	}
+	if err := statsLogFile.Close(); err != nil {
+		log.Printf("Failed to close stats log: %+v", err)
+		return err
+	}
 	return nil
+}
+
+func writeStats(c <-chan time.Time) {
+	memStats := new(runtime.MemStats)
+	gcStats := new(debug.GCStats)
+	debug.ReadGCStats(gcStats)
+	statsLog.Printf("GC: %+v", *gcStats)
+	runtime.ReadMemStats(memStats)
+	statsLog.Printf("MEM: %+v", *memStats)
 }
 
 func handleConnection(c net.Conn, addchan chan<- client, rmchan chan<- client) {

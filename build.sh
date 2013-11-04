@@ -2,11 +2,19 @@
 
 export GOPATH=`pwd`
 
-go install mudlib && \
-  go test mudlib && \
-  go build -ldflags "-s" gomud
+echo installing...
+go install mudlib
 
-if [ $? == 0 ]
-then
+if [ $? == 0 ]; then
+  echo testing...
+  go test mudlib
+fi
+
+if [ $? == 0 ]; then
+  echo building...
+  go build -ldflags "-s" gomud
+fi
+
+if [ $? == 0 ]; then
   echo SUCCESS
 fi

@@ -62,7 +62,7 @@ func Run(configFile string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Listening on " + strconv.Itoa(config.Port))
+	log.Printf("TCP listening on " + strconv.Itoa(config.Port))
 
 	addchan := make(chan client)
 	rmchan := make(chan client)

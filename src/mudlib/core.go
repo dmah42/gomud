@@ -33,6 +33,8 @@ func init() {
 		log.Printf("Failed to create error log: %+v", err)
 		return
 	}
+	// Seek to end of file
+	errorLogFile.Seek(0, 2)
 	errorLog = log.New(errorLogFile, "[error] ", logFlags)
 
 	statsLogFile, err := os.OpenFile("logs/stats", os.O_WRONLY|os.O_CREATE, os.ModePerm)
@@ -40,6 +42,8 @@ func init() {
 		log.Printf("Failed to create stats log: %+v", err)
 		return
 	}
+	// Seek to end of file
+	statsLogFile.Seek(0, 2)
 	statsLog = log.New(statsLogFile, "[stats] ", logFlags)
 
 	c := time.Tick(1 * time.Minute)

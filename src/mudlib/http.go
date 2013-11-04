@@ -95,7 +95,6 @@ func startServing() {
 	}
 }
 
-// TODO: Templates
 func gcHandler(w http.ResponseWriter, r *http.Request) {
 	gcStats := new(debug.GCStats)
 	debug.ReadGCStats(gcStats)

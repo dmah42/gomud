@@ -13,7 +13,10 @@ import (
 const (
 	gcTemplateContent =`
 <html>
-	<head><title>GC</title></head>
+	<head>
+		<title>GC</title>
+		<meta http-equiv="refresh" content="3">
+	</head>
 	<body>
 		<h1>GC</h1>
 		<table>
@@ -27,7 +30,10 @@ const (
 </html>`
 	memTemplateContent =`
 <html>
-	<head><title>Mem</title></head>
+	<head>
+		<title>Mem</title>
+		<meta http-equiv="refresh" content="3">
+	</head>
 	<body>
 		<h1>Mem</h1>
 		<h2>General</h2>

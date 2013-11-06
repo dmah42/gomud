@@ -1,16 +1,20 @@
 package mudlib
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"runtime/debug"
 )
 
 const (
+	numErrorLines = 100
 	gcTemplateContent =`
 <html>
 	<head>
@@ -76,17 +80,35 @@ const (
 	</body>
 </html>
 `
+	errorTemplateContent =`
+<html>
+	<head>
+		<title>Error</title>
+		<meta http-equiv="refresh" content="5">
+	</head>
+	<body>
+		<h1>Error</h1>
+		<table>
+			<tr><th>Log entry</th></tr>
+			{{range .}}
+				<tr><td>{{.}}</td></tr>
+			{{end}}
+		</table>
+	</body>
+</html>`
 )
 
 var (
 	httpPort = flag.Int("httpPort", 8080, "Port for HTTP interface")
 	gcTemplate = template.New("GC")
 	memTemplate = template.New("Mem")
+	errorTemplate = template.New("Error")
 )
 
 func init() {
 	gcTemplate = template.Must(gcTemplate.Parse(gcTemplateContent))
 	memTemplate = template.Must(memTemplate.Parse(memTemplateContent))
+	errorTemplate = template.Must(errorTemplate.Parse(errorTemplateContent))
 
 	http.HandleFunc("/gc", gcHandler)
 	http.HandleFunc("/mem", memHandler)
@@ -120,6 +142,30 @@ func memHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: either read the last few lines of error log, or keep them in memory and write the
-	// error log buffered.
+	log := make([]string, numErrorLines)
+
+	logFile, err := os.Open("logs/error")
+	if err != nil {
+		errorLog.Printf("Unable to open error log for reading")
+	}
+	defer logFile.Close()
+
+	reader := bufio.NewReader(logFile)
+	line, err := reader.ReadString('\n')
+	for err == nil {
+		// TODO: maybe parse lines?
+		log = log[1:]
+		log = append(log, line)
+
+		line, err = reader.ReadString('\n')
+	}
+	if err != io.EOF {
+		errorLog.Printf("Error while reading error log: %+v", err)
+		return
+	}
+
+	if err := errorTemplate.Execute(w, log); err != nil {
+		errorLog.Printf("Failed to execute Error template: %+v", err)
+		w.WriteHeader(500)
+	}
 }

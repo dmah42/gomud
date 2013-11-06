@@ -12,6 +12,8 @@ import (
 	"runtime/debug"
 	"strconv"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 const logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
@@ -193,6 +195,21 @@ func handleMessages(addchan <-chan client, rmchan <-chan client) {
 	}
 }
 
+func isValidNick(nick string) bool {
+	// Check for invalid chars in nick
+	if len(nick) == 0 {
+		return false
+	}
+	for i, w := 0, 0; i < len(nick); i += w {
+		runeValue, width := utf8.DecodeRuneInString(nick[i:])
+		if !unicode.IsLetter(runeValue) && !unicode.IsDigit(runeValue) {
+			return false
+		}
+		w = width
+	}
+	return true
+}
+
 func promptNick(c net.Conn, bufc *bufio.Reader) (nick *string) {
 	// TODO: custom prompts
 	io.WriteString(c, setFgBold(colorMagenta, config.LoginPrompt)+"\n")
@@ -204,6 +221,11 @@ func promptNick(c net.Conn, bufc *bufio.Reader) (nick *string) {
 		nickBytes, _, _ := bufc.ReadLine()
 		*nick = string(nickBytes)
 		// TODO: password
+		if !isValidNick(*nick) {
+			io.WriteString(c, "Invalid nick. Please try again.\n")
+			errorCount++
+			continue
+		}
 		// Check for existing player.
 		player, err := players.get(*nick)
 		if err == nil {

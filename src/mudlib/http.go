@@ -113,6 +113,7 @@ func init() {
 	http.HandleFunc("/gc", gcHandler)
 	http.HandleFunc("/mem", memHandler)
 	http.HandleFunc("/errors", errorHandler)
+	http.HandleFunc("/", rootHandler)
 	go startServing()
 }
 
@@ -168,4 +169,8 @@ func errorHandler(w http.ResponseWriter, r *http.Request) {
 		errorLog.Printf("Failed to execute Error template: %+v", err)
 		w.WriteHeader(500)
 	}
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	http.NotFound(w, r)
 }
